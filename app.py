@@ -73,620 +73,644 @@ tts_lang = _lang  # UI language drives TTS too
 # ── Theme tokens ───────────────────────────────────────────────────────────────
 dark = st.session_state.dark_mode
 
-_BG      = "linear-gradient(160deg,#04071a 0%,#0a0f2e 40%,#0f1535 100%)" if dark else \
-           "linear-gradient(160deg,#dde4ff 0%,#e8ecff 50%,#f0ecff 100%)"
-_SIDEBAR = "rgba(8,11,32,0.98)"      if dark else "#eceeff"
-_TEXT    = "#e2e8f0"                  if dark else "#1e1b4b"
-_TEXT2   = "#94a3b8"                  if dark else "#4b5563"
-_CARD    = "rgba(255,255,255,0.045)" if dark else "#ffffff"
-_CARD2   = "rgba(255,255,255,0.07)"  if dark else "#f5f6ff"
-_BORDER  = "rgba(255,255,255,0.1)"   if dark else "rgba(99,102,241,0.45)"
-_INPUT   = "rgba(255,255,255,0.06)"  if dark else "#ffffff"
-_IBORDER = "rgba(255,255,255,0.15)"  if dark else "rgba(99,102,241,0.6)"
-_DISPBG  = "rgba(255,255,255,0.05)"  if dark else "#eef0ff"
-_TITLE_C = "#c7d2fe"  if dark else "#3730a3"
-_BADGE_C = "#818cf8"  if dark else "#4338ca"
-_SHADOW  = "0 4px 24px rgba(0,0,0,0.4)"  if dark else "0 4px 24px rgba(99,102,241,0.18)"
-_ANS_OK_T= "#6ee7b7"  if dark else "#065f46"
-_ANS_NG_T= "#fca5a5"  if dark else "#7f1d1d"
+_BG      = "#08080f"      if dark else "#f8fafc"
+_SIDEBAR = "#06060d"      if dark else "#ffffff"
+_TEXT    = "#f1f5f9"      if dark else "#0f172a"
+_TEXT2   = "#64748b"      if dark else "#64748b"
+_CARD    = "#111118"      if dark else "#ffffff"
+_CARD2   = "#14141e"      if dark else "#f8fafc"
+_BORDER  = "rgba(255,255,255,0.07)" if dark else "#e2e8f0"
+_INPUT   = "#0d0d18"      if dark else "#ffffff"
+_IBORDER = "rgba(255,255,255,0.12)" if dark else "#cbd5e1"
+_DISPBG  = "#0d0d18"      if dark else "#f1f5f9"
+_TITLE_C = "#a5b4fc"      if dark else "#4338ca"
+_BADGE_C = "#818cf8"      if dark else "#4f46e5"
+_SHADOW  = "0 1px 3px rgba(0,0,0,0.5),0 4px 20px rgba(0,0,0,0.3)"  if dark else \
+           "0 1px 3px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.07)"
+_ANS_OK_T= "#4ade80"      if dark else "#16a34a"
+_ANS_NG_T= "#f87171"      if dark else "#dc2626"
 
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-*, html, body, [class*="css"] {{ font-family:'Inter',sans-serif; box-sizing:border-box; }}
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900&display=swap');
 
-@keyframes shimmer {{
-  0%   {{ background-position: -400% center; }}
-  100% {{ background-position:  400% center; }}
-}}
-@keyframes fadeInUp {{
-  from {{ opacity:0; transform:translateY(22px); }}
-  to   {{ opacity:1; transform:translateY(0);    }}
-}}
-@keyframes fadeIn {{ from {{ opacity:0; }} to {{ opacity:1; }} }}
-@keyframes pulseGlow {{
-  0%,100% {{ box-shadow:0 0 0 0   rgba(99,102,241,0.55); }}
-  50%     {{ box-shadow:0 0 0 14px rgba(99,102,241,0);   }}
-}}
-@keyframes scoreReveal {{
-  0%   {{ transform:scale(0.4) rotate(-8deg); opacity:0; }}
-  65%  {{ transform:scale(1.18) rotate(2deg); }}
-  100% {{ transform:scale(1)    rotate(0deg); opacity:1; }}
-}}
-@keyframes float {{
-  0%,100% {{ transform:translateY(0);    }}
-  50%     {{ transform:translateY(-7px); }}
-}}
-@keyframes progressFill {{ from {{ width:0%; }} }}
-@keyframes confettiFall {{
-  0%   {{ transform:translateY(-10px) rotate(0deg);   opacity:1; }}
-  100% {{ transform:translateY(110vh) rotate(720deg); opacity:0; }}
-}}
-@keyframes chipPop {{
-  0%   {{ transform:scale(0.8); opacity:0; }}
-  80%  {{ transform:scale(1.05); }}
-  100% {{ transform:scale(1); opacity:1; }}
-}}
-@keyframes gradientShift {{
-  0%   {{ background-position:0% 50%;   }}
-  50%  {{ background-position:100% 50%; }}
-  100% {{ background-position:0% 50%;   }}
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+*, html, body, [class*="css"] {{
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
 }}
 
+/* ── Keyframes ───────────────────────────────────────────────────────────── */
+@keyframes fadeIn    {{ from {{ opacity:0 }}               to {{ opacity:1 }} }}
+@keyframes slideUp   {{ from {{ opacity:0; transform:translateY(10px) }} to {{ opacity:1; transform:translateY(0) }} }}
+@keyframes float     {{ 0%,100% {{ transform:translateY(0) }} 50% {{ transform:translateY(-6px) }} }}
+@keyframes blink     {{ 0%,80%,100%{{opacity:0}} 40%{{opacity:1}} }}
+@keyframes scoreReveal {{ 0% {{ transform:scale(0.5); opacity:0 }} 70% {{ transform:scale(1.06) }} 100% {{ transform:scale(1); opacity:1 }} }}
+@keyframes progressFill {{ from {{ width:0% }} }}
+@keyframes confettiFall {{ 0% {{ transform:translateY(-10px) rotate(0deg); opacity:1 }} 100% {{ transform:translateY(110vh) rotate(720deg); opacity:0 }} }}
+@keyframes headerGlow  {{ 0%,100% {{ opacity:0.5 }} 50% {{ opacity:1 }} }}
+
+/* ── App shell ───────────────────────────────────────────────────────────── */
 .stApp {{
   background: {_BG};
   color: {_TEXT};
-  animation: fadeIn 0.6s ease;
 }}
 
+/* ── Header ──────────────────────────────────────────────────────────────── */
 .main-header {{
-  background: linear-gradient(270deg,#1e3a8a,#4c1d95,#1e3a8a,#312e81);
-  background-size: 400% 400%;
-  animation: gradientShift 8s ease infinite;
-  border: 1px solid rgba(139,92,246,0.5);
-  border-radius: 20px;
-  padding: 32px 44px 28px;
-  margin-bottom: 24px;
+  background: linear-gradient(135deg, #0c0c1d 0%, #10102a 50%, #0e0e22 100%);
+  border: 1px solid rgba(99,102,241,0.18);
+  border-radius: 16px;
+  padding: 36px 48px 28px;
+  margin-bottom: 28px;
   text-align: center;
-  box-shadow: 0 8px 40px rgba(79,70,229,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
-  position: relative; overflow: hidden;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(99,102,241,0.08),
+              0 8px 40px rgba(0,0,0,0.5),
+              inset 0 1px 0 rgba(255,255,255,0.05);
+  animation: slideUp 0.4s ease both;
 }}
 .main-header::before {{
-  content:''; position:absolute; top:0; left:-60%; width:60%; height:100%;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent);
-  animation: shimmer 3s linear infinite;
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(99,102,241,0.12) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}}
+.main-header::after {{
+  content: '';
+  position: absolute;
+  top: 0; left: 15%; right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(99,102,241,0.8), rgba(139,92,246,0.6), transparent);
+  animation: headerGlow 3s ease-in-out infinite;
 }}
 .main-header h1 {{
-  color:#fff; font-size:2.8rem; margin:0; font-weight:900;
-  letter-spacing:-1px; text-shadow:0 2px 20px rgba(139,92,246,0.5);
+  color: #ffffff;
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin: 0 0 6px;
+  position: relative;
+  line-height: 1.1;
 }}
-.main-header p  {{ color:rgba(255,255,255,0.82); font-size:1.05rem; margin:8px 0 14px; }}
-.header-pills   {{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:6px; }}
+.main-header p {{
+  color: rgba(255,255,255,0.5);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  margin: 0 0 20px;
+  position: relative;
+}}
+.header-pills {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  position: relative;
+}}
 .hpill {{
-  background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.9);
-  border:1px solid rgba(255,255,255,0.22); border-radius:50px;
-  padding:4px 14px; font-size:0.8rem; font-weight:600; backdrop-filter:blur(6px);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.65);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }}
 
+/* ── Cards ───────────────────────────────────────────────────────────────── */
 .feature-card {{
-  background:{_CARD}; border:1px solid {_BORDER}; border-radius:18px;
-  padding:24px; margin-bottom:14px; box-shadow:{_SHADOW};
-  animation:fadeInUp 0.5s ease both; backdrop-filter:blur(12px);
-  transition:transform 0.2s, box-shadow 0.2s;
+  background: {_CARD};
+  border: 1px solid {_BORDER};
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 12px;
+  box-shadow: {_SHADOW};
+  animation: slideUp 0.3s ease both;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }}
-.feature-card:hover {{ transform:translateY(-2px); box-shadow:0 8px 32px rgba(99,102,241,0.25); }}
-
+.feature-card:hover {{
+  border-color: rgba(99,102,241,0.3);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+}}
 .glass-card {{
-  background:{_CARD2}; border:1px solid {_BORDER}; border-radius:16px;
-  padding:20px 24px; backdrop-filter:blur(16px); box-shadow:{_SHADOW};
-  animation:fadeInUp 0.4s ease both;
+  background: {_CARD2};
+  border: 1px solid {_BORDER};
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: {_SHADOW};
+  animation: slideUp 0.3s ease both;
 }}
-
 .grad-border {{
-  background:linear-gradient({_CARD},{_CARD}) padding-box,
-             linear-gradient(135deg,#6366f1,#8b5cf6,#06b6d4) border-box;
-  border:2px solid transparent; border-radius:16px; padding:20px;
-  animation:fadeInUp 0.45s ease both;
+  background: {_CARD};
+  border: 1px solid rgba(99,102,241,0.3);
+  border-radius: 12px;
+  padding: 20px;
+  animation: slideUp 0.3s ease both;
+  box-shadow: {_SHADOW};
 }}
 
+/* ── Typography ──────────────────────────────────────────────────────────── */
 .section-title {{
-  font-size:1.22rem; font-weight:800; color:{_TITLE_C};
-  margin-bottom:8px; animation:fadeInUp 0.4s ease both;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: {_TITLE_C};
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+  animation: slideUp 0.3s ease both;
 }}
 
+/* ── Display / Output boxes ──────────────────────────────────────────────── */
 .display-box {{
-  background:{_DISPBG}; border:1px solid {_BORDER}; border-radius:14px;
-  padding:18px 22px; font-size:1.08rem; line-height:1.75; color:{_TEXT};
-  min-height:65px; box-shadow:{_SHADOW}; animation:fadeInUp 0.5s ease both;
+  background: {_DISPBG};
+  border: 1px solid {_BORDER};
+  border-radius: 10px;
+  padding: 16px 20px;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: {_TEXT};
+  min-height: 60px;
+  animation: slideUp 0.3s ease both;
 }}
 
-.badge {{
-  display:inline-block; padding:5px 16px; border-radius:50px;
-  font-size:0.82rem; font-weight:700; margin-bottom:10px;
-  animation:chipPop 0.35s ease both;
-}}
-.badge-done    {{ background:rgba(99,102,241,0.2);  color:{_BADGE_C}; border:1px solid {_BADGE_C}; }}
-.badge-success {{ background:rgba(16,185,129,0.18); color:#34d399;    border:1px solid rgba(16,185,129,0.5); }}
-
-.chip-row {{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }}
-.chip {{
-  background:rgba(99,102,241,0.15); color:{_BADGE_C};
-  border:1px solid rgba(99,102,241,0.4); border-radius:50px;
-  padding:5px 14px; font-size:0.83rem; font-weight:600;
-  cursor:pointer; transition:all 0.18s; animation:chipPop 0.3s ease both;
-}}
-.chip:hover {{ background:rgba(99,102,241,0.3); border-color:#6366f1; transform:scale(1.05); }}
-
-.answer-correct {{
-  background:rgba(16,185,129,0.15); border:2px solid #10b981; border-radius:12px;
-  padding:13px 18px; margin:6px 0; font-size:1.05rem; color:{_ANS_OK_T};
-  font-weight:600; animation:fadeInUp 0.3s ease;
-}}
-.answer-wrong {{
-  background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.45);
-  border-radius:12px; padding:13px 18px; margin:6px 0;
-  font-size:1.05rem; color:{_ANS_NG_T};
-}}
-.answer-neutral {{
-  background:{_DISPBG}; border:1px solid {_BORDER}; border-radius:12px;
-  padding:13px 18px; margin:6px 0; font-size:1.05rem; color:{_TEXT};
-}}
-
-.step-card {{
-  background:{_CARD}; border-left:4px solid #6366f1;
-  border-radius:0 12px 12px 0; padding:14px 18px; margin:8px 0;
-  color:{_TEXT}; box-shadow:{_SHADOW}; animation:fadeInUp 0.4s ease both;
-  transition:border-left-color 0.2s;
-}}
-.step-card:hover {{ border-left-color:#8b5cf6; }}
-
-.score-box {{ animation:scoreReveal 0.7s cubic-bezier(0.34,1.56,0.64,1) both; }}
-
-.metric-card {{
-  background:{_CARD2}; border:1px solid {_BORDER}; border-radius:14px;
-  padding:18px 20px; text-align:center; box-shadow:{_SHADOW};
-  animation:fadeInUp 0.45s ease both; transition:transform 0.2s;
-}}
-.metric-card:hover {{ transform:translateY(-3px); }}
-.metric-value {{
-  font-size:2.2rem; font-weight:900;
-  background:linear-gradient(135deg,#6366f1,#8b5cf6);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-}}
-.metric-label {{ color:{_TEXT2}; font-size:0.82rem; font-weight:600; margin-top:4px; }}
-
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
 .stTabs [data-baseweb="tab-list"] {{
-  background:{_CARD}; border-radius:14px; padding:5px; gap:4px;
-  border:1px solid {_BORDER}; box-shadow:{_SHADOW};
+  background: {_CARD};
+  border-radius: 10px;
+  padding: 4px;
+  gap: 2px;
+  border: 1px solid {_BORDER};
+  box-shadow: {_SHADOW};
 }}
 .stTabs [data-baseweb="tab"] {{
-  color:{_TEXT2}; font-size:0.92rem; font-weight:700;
-  border-radius:10px; padding:9px 18px; transition:all 0.2s;
+  color: {_TEXT2};
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 8px 16px;
+  transition: all 0.15s ease;
+  letter-spacing: -0.01em;
 }}
 .stTabs [aria-selected="true"] {{
-  background:linear-gradient(135deg,#4f46e5,#7c3aed) !important;
-  color:white !important; box-shadow:0 4px 14px rgba(99,102,241,0.4) !important;
+  background: #4f46e5 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(79,70,229,0.45) !important;
 }}
 
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
 div[data-testid="stVerticalBlock"] > div:has(> .stButton) button {{
-  background:linear-gradient(135deg,#4f46e5,#7c3aed);
-  color:white; border:none; border-radius:12px;
-  font-size:1rem; font-weight:700; padding:12px 24px; width:100%;
-  box-shadow:0 4px 15px rgba(99,102,241,0.35); transition:all 0.22s ease;
+  background: #4f46e5;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  padding: 10px 20px;
+  width: 100%;
+  letter-spacing: -0.01em;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.1);
+  transition: all 0.15s ease;
 }}
 div[data-testid="stVerticalBlock"] > div:has(> .stButton) button:hover {{
-  transform:translateY(-2px); box-shadow:0 8px 25px rgba(99,102,241,0.5);
+  background: #4338ca;
+  box-shadow: 0 4px 14px rgba(79,70,229,0.45);
+  transform: translateY(-1px);
+}}
+div[data-testid="stVerticalBlock"] > div:has(> .stButton) button:active {{
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(79,70,229,0.3);
 }}
 
+/* ── Form inputs ─────────────────────────────────────────────────────────── */
 .stTextInput input, .stTextArea textarea, .stNumberInput input {{
-  background:{_INPUT} !important; color:{_TEXT} !important;
-  border:1px solid {_IBORDER} !important; border-radius:10px !important;
-  transition:border-color 0.2s, box-shadow 0.2s !important;
+  background: {_INPUT} !important;
+  color: {_TEXT} !important;
+  border: 1px solid {_IBORDER} !important;
+  border-radius: 8px !important;
+  font-size: 0.9375rem !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }}
 .stTextInput input:focus, .stTextArea textarea:focus {{
-  border-color:rgba(99,102,241,0.7) !important;
-  box-shadow:0 0 0 3px rgba(99,102,241,0.15) !important;
-}}
-
-.stSidebar {{ background:{_SIDEBAR} !important; border-right:1px solid {_BORDER} !important; }}
-
-.board-image {{
-  width:100%; border-radius:14px; border:1px solid {_BORDER};
-  box-shadow:{_SHADOW}; animation:fadeIn 0.5s ease;
-}}
-
-.empty-state {{
-  background:{_DISPBG}; border:2px dashed rgba(99,102,241,0.3);
-  border-radius:18px; padding:60px 20px; text-align:center;
-  color:{_TEXT2}; animation:fadeIn 0.6s ease;
-}}
-.empty-icon {{
-  font-size:3rem; display:block; margin-bottom:12px;
-  animation:float 3s ease-in-out infinite;
-}}
-
-.stProgress > div > div > div > div {{
-  background:linear-gradient(90deg,#4f46e5,#7c3aed) !important;
-  border-radius:50px !important; animation:progressFill 0.6s ease;
-}}
-
-.confetti-piece {{
-  position:fixed; top:-20px; width:10px; height:10px;
-  border-radius:2px; animation:confettiFall linear forwards; z-index:9999;
-}}
-
-#MainMenu, footer, header {{ visibility:hidden; }}
-[data-testid="stToolbar"]     {{ display:none !important; }}
-[data-testid="stDeployButton"]{{ display:none !important; }}
-
-.stSelectbox > div > div {{
-  background:{_INPUT} !important; border:1px solid {_IBORDER} !important;
-  border-radius:10px !important; color:{_TEXT} !important;
-}}
-
-/* Force all select dropdowns to open DOWNWARD with scroll (never upward) */
-ul[role="listbox"] {{
-  max-height:220px !important;
-  overflow-y:auto !important;
-}}
-[data-baseweb="popover"] [data-baseweb="menu"] {{
-  max-height:220px !important;
-  overflow-y:auto !important;
-}}
-hr {{
-  border:none !important;
-  border-top: 1px solid {_BORDER} !important;
-  height:0 !important;
-  background:transparent !important;
-  margin:20px 0;
-}}
-
-/* ─── Cursor: hand on all interactive / label elements ───────────────────── */
-[data-baseweb="select"],
-[data-baseweb="select"] > div,
-[data-baseweb="select"] [role="combobox"],
-[data-baseweb="select"] svg,
-[data-baseweb="popover"] [role="option"],
-ul[role="listbox"] li,
-[data-testid="stSelectbox"],
-[data-testid="stSelectbox"] > div,
-[data-testid="stWidgetLabel"],
-[data-testid="stWidgetLabel"] p,
-label,
-button,
-[role="button"],
-summary,
-[data-baseweb="tab"],
-.chip-col button,
-a
-{{ cursor: pointer !important; }}
-
-/* Text cursor only inside actual editable fields */
-input[type="text"], input[type="search"], textarea
-{{ cursor: text !important; }}
-
-/* No I-beam on static text */
-[data-testid="stMarkdownContainer"] p,
-[data-testid="stCaptionContainer"] p,
-.section-title, .metric-label, .badge, .hpill,
-[data-testid="stSidebarContent"] p,
-[data-testid="stSidebarContent"] span
-{{ cursor: default !important; }}
-
-/* ─── Chip-style small buttons ───────────────────────────────────────────── */
-[data-testid="stHorizontalBlock"] .chip-col button,
-.chip-col button {{
-  background: rgba(99,102,241,0.15) !important;
-  color: {_BADGE_C} !important;
-  border: 1px solid rgba(99,102,241,0.45) !important;
-  border-radius: 50px !important;
-  font-size: 0.8rem !important;
-  font-weight: 600 !important;
-  padding: 5px 8px !important;
-  box-shadow: none !important;
-  min-height: 0 !important;
-  height: 34px !important;
-  transition: all 0.18s !important;
-  transform: none !important;
-}}
-.chip-col button:hover {{
-  background: rgba(99,102,241,0.32) !important;
   border-color: #6366f1 !important;
-  transform: scale(1.04) !important;
-  box-shadow: 0 2px 10px rgba(99,102,241,0.25) !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12) !important;
+  outline: none !important;
 }}
-
-/* ─── Custom scrollbar ───────────────────────────────────────────────────── */
-::-webkit-scrollbar {{ width:6px; height:6px; }}
-::-webkit-scrollbar-track {{ background:transparent; }}
-::-webkit-scrollbar-thumb {{ background:rgba(99,102,241,0.4); border-radius:99px; }}
-::-webkit-scrollbar-thumb:hover {{ background:rgba(99,102,241,0.7); }}
-
-/* ─── Action pill buttons (copy / speak) ────────────────────────────────── */
-.action-pill {{
-  display:inline-flex; align-items:center; gap:5px;
-  background:rgba(99,102,241,0.12); color:{_BADGE_C};
-  border:1px solid rgba(99,102,241,0.35); border-radius:50px;
-  padding:4px 12px; font-size:0.78rem; font-weight:600;
-  cursor:pointer; transition:all 0.18s; font-family:'Inter',sans-serif;
-  text-decoration:none;
-}}
-.action-pill:hover {{ background:rgba(99,102,241,0.28); border-color:#6366f1; }}
-
-/* ─── Typing indicator ───────────────────────────────────────────────────── */
-@keyframes blink {{ 0%,80%,100%{{opacity:0}} 40%{{opacity:1}} }}
-.typing-dot {{
-  display:inline-block; width:7px; height:7px; border-radius:50%;
-  background:#6366f1; margin:0 2px;
-  animation:blink 1.4s infinite both;
-}}
-.typing-dot:nth-child(2) {{ animation-delay:.2s; }}
-.typing-dot:nth-child(3) {{ animation-delay:.4s; }}
-.typing-wrap {{
-  display:inline-flex; align-items:center; gap:6px;
-  background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.25);
-  border-radius:50px; padding:6px 14px; font-size:0.82rem; color:{_TEXT2};
-}}
-
-/* ─── Styled warning / error cards ──────────────────────────────────────── */
-.warn-card {{
-  background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.45);
-  border-radius:12px; padding:12px 16px; color:#fbbf24;
-  font-size:0.92rem; font-weight:500; margin:6px 0;
-  animation:fadeInUp 0.3s ease;
-}}
-.err-card {{
-  background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.45);
-  border-radius:12px; padding:12px 16px; color:#fca5a5;
-  font-size:0.92rem; font-weight:500; margin:6px 0;
-  animation:fadeInUp 0.3s ease;
-}}
-.info-card {{
-  background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.35);
-  border-radius:12px; padding:12px 16px; color:#67e8f9;
-  font-size:0.92rem; font-weight:500; margin:6px 0;
-  animation:fadeInUp 0.3s ease;
-}}
-
-/* ─── Mobile responsive ──────────────────────────────────────────────────── */
-@media (max-width: 768px) {{
-  .main-header h1 {{ font-size:1.8rem !important; }}
-  .main-header {{ padding:20px 18px 16px !important; }}
-  .header-pills {{ gap:5px !important; }}
-  .hpill {{ font-size:0.72rem !important; padding:3px 10px !important; }}
-  .section-title {{ font-size:1rem !important; }}
-  .display-box {{ padding:12px 14px !important; font-size:0.95rem !important; }}
-  .stTabs [data-baseweb="tab"] {{ font-size:0.78rem !important; padding:7px 10px !important; }}
-  div[data-testid="stVerticalBlock"] > div:has(> .stButton) button {{
-    font-size:0.88rem !important; padding:10px 14px !important;
-  }}
-}}
-@media (max-width: 480px) {{
-  .main-header h1 {{ font-size:1.4rem !important; }}
-  .metric-value {{ font-size:1.6rem !important; }}
-}}
-
-/* ─── Light mode: force all text visible ─────────────────────────────────── */
-[data-testid="stWidgetLabel"],
-[data-testid="stWidgetLabel"] p,
-[data-testid="stWidgetLabel"] label,
-.stSidebar label,
-.stSidebar p,
-.stSidebar span:not(.hpill),
-.stSidebar [data-testid="stMarkdownContainer"] p,
-.stSidebar .stCaption,
-label, p, span.st-emotion-cache-hidden,
-[data-testid="stMarkdownContainer"] p,
-[data-testid="stCaptionContainer"] p,
-[data-testid="stText"] p,
-.stTextInput label,
-.stTextArea label,
-.stSelectbox label,
-.stNumberInput label,
-.stSlider label,
-.stCheckbox label,
-.stRadio label,
-.stTabs [data-baseweb="tab"],
-[data-testid="stSidebarContent"] p,
-[data-testid="stSidebarContent"] label,
-[data-testid="stSidebarContent"] span,
-.stExpander summary p,
-.stExpander p
-{{
+.stSelectbox > div > div {{
+  background: {_INPUT} !important;
+  border: 1px solid {_IBORDER} !important;
+  border-radius: 8px !important;
   color: {_TEXT} !important;
 }}
 
-/* Caption specifically */
-[data-testid="stCaptionContainer"],
-.stCaption {{ color: {_TEXT2} !important; }}
+/* ── Badges ──────────────────────────────────────────────────────────────── */
+.badge {{
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin-bottom: 8px;
+}}
+.badge-done    {{ background: rgba(99,102,241,0.1);  color: {_BADGE_C}; border: 1px solid rgba(99,102,241,0.2); }}
+.badge-success {{ background: rgba(16,185,129,0.1);  color: #10b981;    border: 1px solid rgba(16,185,129,0.25); }}
 
-/* Sidebar background + text */
-[data-testid="stSidebarContent"],
-section[data-testid="stSidebar"] > div:first-child
-{{ background: {_SIDEBAR} !important; }}
-
-/* Input placeholders */
-::placeholder {{ color: {_TEXT2} !important; opacity: 0.7 !important; }}
-
-/* Selectbox dropdown text */
-[data-baseweb="select"] span,
-[data-baseweb="select"] div
-{{ color: {_TEXT} !important; }}
-
-/* Tab text fix for light mode */
-.stTabs [data-baseweb="tab-list"] [data-baseweb="tab"]
-{{ color: {_TEXT2} !important; }}
-.stTabs [aria-selected="true"]
-{{ color: #ffffff !important; }}
-
-/* Expander header */
-details summary {{ color: {_TEXT} !important; }}
-
-/* ─── Light mode specific overrides ─────────────────────────────────────── */
-{"" if dark else f"""
-
-/* ══ SIDEBAR BACKGROUND ══ */
-section[data-testid="stSidebar"],
-section[data-testid="stSidebar"] > div,
-[data-testid="stSidebarContent"] {{
-  background: #eceeff !important;
+/* ── Quick-topic chips ───────────────────────────────────────────────────── */
+.chip-row {{ display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }}
+.chip {{
+  background: rgba(99,102,241,0.08);
+  color: {_BADGE_C};
+  border: 1px solid rgba(99,102,241,0.18);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}}
+.chip:hover {{
+  background: rgba(99,102,241,0.18);
+  border-color: rgba(99,102,241,0.4);
 }}
 
-/* ══ SIDEBAR: EVERY TEXT ELEMENT DARK ══ */
-body section[data-testid="stSidebar"] *,
-body [data-testid="stSidebarContent"] * {{
-  color: #1e1b4b !important;
-}}
-
-/* ══ SIDEBAR: HR DIVIDER LINES ══ */
-section[data-testid="stSidebar"] hr,
-[data-testid="stSidebarContent"] hr {{
-  display: block !important;
-  visibility: visible !important;
-  border: none !important;
-  border-top: 1px solid rgba(99,102,241,0.45) !important;
-  height: 0 !important;
-  background: transparent !important;
-  margin: 14px 0 !important;
-  opacity: 1 !important;
-}}
-
-/* ══ SIDEBAR: SELECTBOX ══ */
-[data-testid="stSidebarContent"] [data-baseweb="select"] > div {{
-  background: #ffffff !important;
-  border: 1.5px solid rgba(99,102,241,0.5) !important;
-}}
-[data-testid="stSidebarContent"] [data-baseweb="select"] span,
-[data-testid="stSidebarContent"] [data-baseweb="select"] div {{
-  color: #1e1b4b !important;
-  background: transparent !important;
-}}
-
-/* ══ SIDEBAR: EXPANDER SUMMARY (Voice Commands) ══ */
-[data-testid="stSidebarContent"] details > summary,
-[data-testid="stSidebarContent"] details > summary *,
-[data-testid="stSidebarContent"] details > summary svg {{
-  color: #1e1b4b !important;
-  fill: #1e1b4b !important;
-}}
-[data-testid="stSidebarContent"] details {{
-  background: rgba(99,102,241,0.06) !important;
-  border: 1px solid rgba(99,102,241,0.25) !important;
-  border-radius: 10px !important;
-  padding: 4px 8px !important;
-}}
-
-/* ══ SIDEBAR: TOGGLE (Dark Mode) ══ */
-[data-testid="stSidebarContent"] [data-testid="stToggle"] *,
-[data-testid="stSidebarContent"] [data-baseweb="checkbox"] * {{
-  color: #1e1b4b !important;
-}}
-
-/* ══ GLOBAL HR DIVIDERS ══ */
-hr {{
-  border: none !important;
-  border-top: 1px solid rgba(99,102,241,0.35) !important;
-  height: 0 !important;
-  background: transparent !important;
-  margin: 18px 0 !important;
-}}
-
-/* ══ CARDS ══ */
-.feature-card, .glass-card {{
-  background: #ffffff !important;
-  box-shadow: 0 4px 24px rgba(99,102,241,0.15) !important;
-  border: 1px solid rgba(99,102,241,0.28) !important;
-}}
-.grad-border {{
-  background: #ffffff !important;
-  box-shadow: 0 4px 24px rgba(99,102,241,0.15) !important;
-}}
-
-/* ══ DISPLAY BOXES ══ */
-.display-box {{
-  background: #eef0ff !important;
-  border: 1px solid rgba(99,102,241,0.35) !important;
-  color: #1e1b4b !important;
-}}
-
-/* ══ CHIP BUTTONS ══ */
+/* ── Chip-style action buttons ───────────────────────────────────────────── */
+[data-testid="stHorizontalBlock"] .chip-col button,
 .chip-col button {{
   background: rgba(99,102,241,0.08) !important;
-  color: #3730a3 !important;
-  border: 1px solid rgba(99,102,241,0.3) !important;
+  color: {_BADGE_C} !important;
+  border: 1px solid rgba(99,102,241,0.18) !important;
+  border-radius: 6px !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  padding: 4px 8px !important;
+  box-shadow: none !important;
+  min-height: 0 !important;
+  height: 32px !important;
+  transition: all 0.15s ease !important;
+  transform: none !important;
 }}
 .chip-col button:hover {{
   background: rgba(99,102,241,0.18) !important;
-  color: #3730a3 !important;
+  border-color: rgba(99,102,241,0.35) !important;
 }}
 
-/* ══ TEXT INPUTS ══ */
-.stTextInput input, .stTextArea textarea, .stNumberInput input {{
+/* ── Quiz answer cards ───────────────────────────────────────────────────── */
+.answer-correct {{
+  background: rgba(74,222,128,0.08);
+  border: 1px solid rgba(74,222,128,0.25);
+  border-left: 3px solid #4ade80;
+  border-radius: 0 8px 8px 0;
+  padding: 12px 16px;
+  margin: 4px 0;
+  color: {_ANS_OK_T};
+  font-weight: 600;
+  font-size: 0.9375rem;
+  animation: slideUp 0.2s ease;
+}}
+.answer-wrong {{
+  background: rgba(248,113,113,0.07);
+  border: 1px solid rgba(248,113,113,0.2);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 4px 0;
+  color: {_ANS_NG_T};
+  font-size: 0.9375rem;
+}}
+.answer-neutral {{
+  background: {_DISPBG};
+  border: 1px solid {_BORDER};
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 4px 0;
+  color: {_TEXT};
+  font-size: 0.9375rem;
+  transition: border-color 0.15s ease;
+}}
+.answer-neutral:hover {{ border-color: rgba(99,102,241,0.3); }}
+
+/* ── Step cards ──────────────────────────────────────────────────────────── */
+.step-card {{
+  background: {_CARD};
+  border: 1px solid {_BORDER};
+  border-left: 3px solid #6366f1;
+  border-radius: 0 8px 8px 0;
+  padding: 14px 16px;
+  margin: 6px 0;
+  color: {_TEXT};
+  animation: slideUp 0.3s ease both;
+  transition: border-left-color 0.15s ease;
+}}
+.step-card:hover {{ border-left-color: #8b5cf6; }}
+
+/* ── Metric cards ────────────────────────────────────────────────────────── */
+.metric-card {{
+  background: {_CARD};
+  border: 1px solid {_BORDER};
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  animation: slideUp 0.3s ease both;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}}
+.metric-card:hover {{
+  border-color: rgba(99,102,241,0.3);
+  transform: translateY(-2px);
+}}
+.metric-value {{
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}}
+.metric-label {{
+  color: {_TEXT2};
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}}
+
+/* ── Status cards ────────────────────────────────────────────────────────── */
+.warn-card {{
+  background: rgba(245,158,11,0.07);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-left: 3px solid #f59e0b;
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  color: #fbbf24;
+  font-size: 0.875rem;
+  margin: 6px 0;
+  animation: slideUp 0.2s ease;
+}}
+.err-card {{
+  background: rgba(239,68,68,0.07);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-left: 3px solid #ef4444;
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  color: #fca5a5;
+  font-size: 0.875rem;
+  margin: 6px 0;
+  animation: slideUp 0.2s ease;
+}}
+.info-card {{
+  background: rgba(6,182,212,0.07);
+  border: 1px solid rgba(6,182,212,0.2);
+  border-left: 3px solid #06b6d4;
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  color: #67e8f9;
+  font-size: 0.875rem;
+  margin: 6px 0;
+  animation: slideUp 0.2s ease;
+}}
+
+/* ── Action pills (copy/speak) ───────────────────────────────────────────── */
+.action-pill {{
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  color: {_BADGE_C};
+  border: 1px solid {_BORDER};
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Inter', sans-serif;
+  text-decoration: none;
+}}
+.action-pill:hover {{
+  background: rgba(99,102,241,0.08);
+  border-color: rgba(99,102,241,0.35);
+}}
+
+/* ── Typing indicator ────────────────────────────────────────────────────── */
+.typing-dot {{
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #6366f1;
+  margin: 0 2px;
+  animation: blink 1.4s infinite both;
+}}
+.typing-dot:nth-child(2) {{ animation-delay: .2s; }}
+.typing-dot:nth-child(3) {{ animation-delay: .4s; }}
+.typing-wrap {{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(99,102,241,0.07);
+  border: 1px solid rgba(99,102,241,0.18);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.8125rem;
+  color: {_TEXT2};
+}}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.empty-state {{
+  background: {_DISPBG};
+  border: 1.5px dashed rgba(99,102,241,0.2);
+  border-radius: 12px;
+  padding: 56px 24px;
+  text-align: center;
+  color: {_TEXT2};
+  animation: fadeIn 0.4s ease;
+}}
+.empty-icon {{
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 12px;
+  animation: float 4s ease-in-out infinite;
+}}
+
+/* ── Board image ─────────────────────────────────────────────────────────── */
+.board-image {{
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid {_BORDER};
+  animation: fadeIn 0.4s ease;
+}}
+
+/* ── Score box ───────────────────────────────────────────────────────────── */
+.score-box {{ animation: scoreReveal 0.6s cubic-bezier(0.34,1.56,0.64,1) both; }}
+
+/* ── Confetti ────────────────────────────────────────────────────────────── */
+.confetti-piece {{
+  position: fixed; top: -20px;
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  animation: confettiFall linear forwards;
+  z-index: 9999;
+}}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+.stSidebar {{ background: {_SIDEBAR} !important; border-right: 1px solid {_BORDER} !important; }}
+[data-testid="stSidebarContent"],
+section[data-testid="stSidebar"] > div:first-child {{ background: {_SIDEBAR} !important; }}
+
+/* ── Progress bar ────────────────────────────────────────────────────────── */
+.stProgress > div > div > div > div {{
+  background: linear-gradient(90deg, #4f46e5, #7c3aed) !important;
+  border-radius: 99px !important;
+  animation: progressFill 0.6s ease;
+}}
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {{ width: 5px; height: 5px; }}
+::-webkit-scrollbar-track {{ background: transparent; }}
+::-webkit-scrollbar-thumb {{ background: rgba(99,102,241,0.25); border-radius: 99px; }}
+::-webkit-scrollbar-thumb:hover {{ background: rgba(99,102,241,0.45); }}
+
+/* ── HR ──────────────────────────────────────────────────────────────────── */
+hr {{
+  border: none !important;
+  border-top: 1px solid {_BORDER} !important;
+  height: 0 !important;
+  background: transparent !important;
+  margin: 16px 0;
+}}
+
+/* ── Hide Streamlit chrome ───────────────────────────────────────────────── */
+#MainMenu, footer, header {{ visibility: hidden; }}
+[data-testid="stToolbar"]      {{ display: none !important; }}
+[data-testid="stDeployButton"] {{ display: none !important; }}
+
+/* ── Dropdowns open downward ─────────────────────────────────────────────── */
+ul[role="listbox"] {{ max-height: 220px !important; overflow-y: auto !important; }}
+[data-baseweb="popover"] [data-baseweb="menu"] {{ max-height: 220px !important; overflow-y: auto !important; }}
+
+/* ── Cursors ─────────────────────────────────────────────────────────────── */
+[data-baseweb="select"], [data-baseweb="select"] > div,
+[data-baseweb="select"] [role="combobox"], [data-baseweb="select"] svg,
+[data-baseweb="popover"] [role="option"], ul[role="listbox"] li,
+[data-testid="stSelectbox"], [data-testid="stSelectbox"] > div,
+[data-testid="stWidgetLabel"], [data-testid="stWidgetLabel"] p,
+label, button, [role="button"], summary, [data-baseweb="tab"],
+.chip-col button, a {{ cursor: pointer !important; }}
+input[type="text"], input[type="search"], textarea {{ cursor: text !important; }}
+[data-testid="stMarkdownContainer"] p, [data-testid="stCaptionContainer"] p,
+.section-title, .metric-label, .badge, .hpill,
+[data-testid="stSidebarContent"] p, [data-testid="stSidebarContent"] span
+{{ cursor: default !important; }}
+
+/* ── Text color cascade ──────────────────────────────────────────────────── */
+[data-testid="stWidgetLabel"], [data-testid="stWidgetLabel"] p,
+[data-testid="stWidgetLabel"] label, .stSidebar label, .stSidebar p,
+.stSidebar span:not(.hpill), .stSidebar [data-testid="stMarkdownContainer"] p,
+label, [data-testid="stMarkdownContainer"] p, [data-testid="stCaptionContainer"] p,
+[data-testid="stText"] p, .stTextInput label, .stTextArea label,
+.stSelectbox label, .stNumberInput label, .stTabs [data-baseweb="tab"],
+[data-testid="stSidebarContent"] p, [data-testid="stSidebarContent"] label,
+[data-testid="stSidebarContent"] span, .stExpander summary p, .stExpander p
+{{ color: {_TEXT} !important; }}
+[data-testid="stCaptionContainer"], .stCaption {{ color: {_TEXT2} !important; }}
+::placeholder {{ color: {_TEXT2} !important; opacity: 0.6 !important; }}
+[data-baseweb="select"] span, [data-baseweb="select"] div {{ color: {_TEXT} !important; }}
+.stTabs [data-baseweb="tab-list"] [data-baseweb="tab"] {{ color: {_TEXT2} !important; }}
+.stTabs [aria-selected="true"] {{ color: #ffffff !important; }}
+details summary {{ color: {_TEXT} !important; }}
+
+/* ── Chat messages ───────────────────────────────────────────────────────── */
+[data-testid="stChatMessage"] {{
+  background: {_CARD} !important;
+  border: 1px solid {_BORDER} !important;
+  border-radius: 10px !important;
+}}
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {{
+  .main-header {{ padding: 24px 20px 20px !important; }}
+  .main-header h1 {{ font-size: 1.75rem !important; }}
+  .main-header p {{ font-size: 0.875rem !important; }}
+  .hpill {{ font-size: 0.7rem !important; padding: 3px 9px !important; }}
+  .stTabs [data-baseweb="tab"] {{ font-size: 0.75rem !important; padding: 7px 10px !important; }}
+  .section-title {{ font-size: 1rem !important; }}
+  .display-box {{ padding: 12px 14px !important; font-size: 0.9375rem !important; }}
+  div[data-testid="stVerticalBlock"] > div:has(> .stButton) button {{
+    font-size: 0.875rem !important; padding: 9px 14px !important;
+  }}
+}}
+@media (max-width: 480px) {{
+  .main-header h1 {{ font-size: 1.4rem !important; }}
+  .metric-value {{ font-size: 1.6rem !important; }}
+}}
+
+/* ── Light-mode targeted overrides ──────────────────────────────────────── */
+{"" if dark else f"""
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] > div,
+[data-testid="stSidebarContent"] {{ background: #ffffff !important; }}
+
+body section[data-testid="stSidebar"] *,
+body [data-testid="stSidebarContent"] * {{ color: #0f172a !important; }}
+
+section[data-testid="stSidebar"] hr,
+[data-testid="stSidebarContent"] hr {{
+  display: block !important; visibility: visible !important;
+  border: none !important; border-top: 1px solid #e2e8f0 !important;
+  height: 0 !important; background: transparent !important;
+  margin: 14px 0 !important; opacity: 1 !important;
+}}
+[data-testid="stSidebarContent"] [data-baseweb="select"] > div {{
+  background: #f8fafc !important; border: 1px solid #e2e8f0 !important;
+}}
+[data-testid="stSidebarContent"] [data-baseweb="select"] span,
+[data-testid="stSidebarContent"] [data-baseweb="select"] div {{
+  color: #0f172a !important; background: transparent !important;
+}}
+[data-testid="stSidebarContent"] details > summary,
+[data-testid="stSidebarContent"] details > summary *,
+[data-testid="stSidebarContent"] details > summary svg {{
+  color: #0f172a !important; fill: #0f172a !important;
+}}
+[data-testid="stSidebarContent"] details {{
+  background: #f8fafc !important; border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important; padding: 4px 8px !important;
+}}
+hr {{ border-top: 1px solid #e2e8f0 !important; margin: 16px 0 !important; }}
+.feature-card, .glass-card, .grad-border {{
   background: #ffffff !important;
-  color: #1e1b4b !important;
-  border: 1.5px solid rgba(99,102,241,0.5) !important;
-  box-shadow: 0 1px 4px rgba(99,102,241,0.08) !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.07) !important;
+}}
+.display-box {{ background: #f1f5f9 !important; border: 1px solid #e2e8f0 !important; color: #0f172a !important; }}
+.chip-col button {{ background: #f1f5f9 !important; color: #4338ca !important; border: 1px solid #e2e8f0 !important; }}
+.chip-col button:hover {{ background: #e8eaff !important; border-color: #c7d2fe !important; }}
+.stTextInput input, .stTextArea textarea, .stNumberInput input {{
+  background: #ffffff !important; color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
 }}
 .stTextInput input:focus, .stTextArea textarea:focus {{
-  border-color: #6366f1 !important;
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.15) !important;
+  border-color: #6366f1 !important; box-shadow: 0 0 0 3px rgba(99,102,241,0.1) !important;
 }}
-
-/* ══ SELECTBOX (main area) ══ */
-.stSelectbox > div > div {{
-  background: #ffffff !important;
-  border: 1.5px solid rgba(99,102,241,0.5) !important;
-  color: #1e1b4b !important;
-}}
-
-/* ══ STEP / ANSWER CARDS ══ */
-.step-card {{
-  background: #f5f6ff !important;
-  border-left-color: #6366f1 !important;
-  color: #1e1b4b !important;
-}}
-.answer-correct {{ background: rgba(16,185,129,0.08) !important; }}
-.answer-wrong   {{ background: rgba(239,68,68,0.06) !important; }}
-.answer-neutral {{ background: #f5f6ff !important; border: 1px solid rgba(99,102,241,0.2) !important; }}
-
-/* ══ BADGES ══ */
-.badge-done    {{ background: rgba(99,102,241,0.12) !important; }}
-.badge-success {{ background: rgba(16,185,129,0.1) !important; }}
-
-/* ══ EMPTY STATE ══ */
-.empty-state {{
-  background: #f0f2ff !important;
-  border: 2px dashed rgba(99,102,241,0.35) !important;
-}}
-
-/* ══ TAB BAR ══ */
-.stTabs [data-baseweb="tab-list"] {{
-  background: #ffffff !important;
-  box-shadow: 0 2px 12px rgba(99,102,241,0.12) !important;
-}}
-
-/* ══ METRIC CARDS ══ */
-.metric-card {{
-  background: #ffffff !important;
-  box-shadow: 0 4px 16px rgba(99,102,241,0.12) !important;
-}}
-
-/* ══ CHAT MESSAGES ══ */
-[data-testid="stChatMessage"] {{
-  background: #ffffff !important;
-  border: 1px solid rgba(99,102,241,0.18) !important;
-  box-shadow: 0 2px 8px rgba(99,102,241,0.08) !important;
-}}
-
-/* ══ PROGRESS BAR TRACK ══ */
-[data-testid="stProgressBar"] > div {{
-  background: rgba(99,102,241,0.12) !important;
-}}
-
-/* ══ WARN/ERR/INFO CARDS ══ */
-.warn-card {{ color: #92400e !important; background: rgba(251,191,36,0.12) !important; }}
-.err-card  {{ color: #991b1b !important; background: rgba(239,68,68,0.08) !important; }}
-.info-card {{ color: #0e7490 !important; background: rgba(6,182,212,0.08) !important; }}
+.stSelectbox > div > div {{ background: #ffffff !important; border: 1px solid #e2e8f0 !important; color: #0f172a !important; }}
+.step-card {{ background: #f8fafc !important; border-color: #e2e8f0 !important; color: #0f172a !important; }}
+.answer-neutral {{ background: #f8fafc !important; border-color: #e2e8f0 !important; color: #0f172a !important; }}
+.answer-correct {{ background: rgba(16,185,129,0.07) !important; }}
+.answer-wrong   {{ background: rgba(239,68,68,0.05) !important; }}
+.empty-state {{ background: #f8fafc !important; border-color: #e2e8f0 !important; }}
+.stTabs [data-baseweb="tab-list"] {{ background: #ffffff !important; border: 1px solid #e2e8f0 !important; box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important; }}
+.metric-card {{ background: #ffffff !important; border: 1px solid #e2e8f0 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important; }}
+[data-testid="stChatMessage"] {{ background: #ffffff !important; border: 1px solid #e2e8f0 !important; }}
+.warn-card {{ color: #92400e !important; background: rgba(245,158,11,0.08) !important; border-color: rgba(245,158,11,0.25) !important; }}
+.err-card  {{ color: #991b1b !important; background: rgba(239,68,68,0.07) !important; border-color: rgba(239,68,68,0.2) !important; }}
+.info-card {{ color: #0e7490 !important; background: rgba(6,182,212,0.07) !important; border-color: rgba(6,182,212,0.2) !important; }}
+.badge-done    {{ background: rgba(99,102,241,0.08) !important; }}
+.badge-success {{ background: rgba(16,185,129,0.08) !important; color: #059669 !important; }}
 """}
 </style>
 """, unsafe_allow_html=True)
