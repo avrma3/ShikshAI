@@ -51,23 +51,47 @@ def _is_truetype(font) -> bool:
     return isinstance(font, ImageFont.FreeTypeFont)
 
 
+# Common Unicode → ASCII substitutions for scientific/math text
+_UNICODE_MAP = str.maketrans({
+    "→": "->", "←": "<-", "↑": "^", "↓": "v", "↔": "<->",
+    "²": "^2", "³": "^3", "⁴": "^4", "⁰": "^0", "¹": "^1",
+    "₀": "0", "₁": "1", "₂": "2", "₃": "3", "₄": "4",
+    "₅": "5", "₆": "6", "₇": "7", "₈": "8", "₉": "9",
+    "α": "alpha", "β": "beta", "γ": "gamma", "δ": "delta",
+    "π": "pi",   "Δ": "Delta", "Σ": "Sigma", "μ": "mu",
+    "λ": "lambda","ω": "omega","θ": "theta","φ": "phi",
+    "×": "x",    "÷": "/",    "√": "sqrt", "∞": "inf",
+    "≈": "~",    "≠": "!=",   "≤": "<=",   "≥": ">=",
+    "°": " deg", "·": ".",    "±": "+/-",  "∑": "sum",
+    "∫": "int",  "∂": "d",    "∇": "del",
+})
+
+
+def _sci_ascii(text: str) -> str:
+    """Convert common scientific/math Unicode to ASCII, keep Latin-1."""
+    text = text.translate(_UNICODE_MAP)
+    return "".join(c if ord(c) < 256 else "?" for c in text)
+
+
 def _draw_text_safe(draw, pos, text: str, fill, font, anchor=None):
-    """Draw text; if it contains non-Latin chars and font can't render them,
-    fall back to the ASCII-safe version of the string."""
-    try:
+    """Draw text safely — tries as-is, then ASCII-converted fallback."""
+    def _do(t):
         if anchor:
-            draw.text(pos, text, fill=fill, font=font, anchor=anchor)
+            draw.text(pos, t, fill=fill, font=font, anchor=anchor)
         else:
-            draw.text(pos, text, fill=fill, font=font)
+            draw.text(pos, t, fill=fill, font=font)
+    try:
+        _do(text)
     except Exception:
-        safe = "".join(c if ord(c) < 256 else "?" for c in text)
         try:
-            if anchor:
-                draw.text(pos, safe, fill=fill, font=font, anchor=anchor)
-            else:
-                draw.text(pos, safe, fill=fill, font=font)
+            _do(_sci_ascii(text))
         except Exception:
             pass
+
+
+def _draw_sci(draw, pos, text: str, fill, font, anchor=None):
+    """Draw scientific text — always converts Unicode math/chem symbols to ASCII first."""
+    _draw_text_safe(draw, pos, _sci_ascii(str(text)), fill, font, anchor)
 
 
 def _rr(draw, xy, r, fill, outline=None, w=2):
@@ -106,12 +130,11 @@ def create_concept_card(data: dict) -> bytes:
     draw.rectangle([0, 0, W, 90], fill=(30, 40, 120))
     draw.rectangle([0, 86, W, 90], fill=INDIGO)
     title = data.get("title", "Concept")[:55]
-    draw.text((60, 45), "ShikshAI", fill=(160, 170, 255), font=f_label, anchor="lm")
-    draw.text((W // 2, 45), title, fill=WHITE, font=f_title, anchor="mm")
+    _draw_sci(draw, (60, 45), "ShikshAI", (160, 170, 255), f_label, anchor="lm")
+    _draw_sci(draw, (W // 2, 45), title, WHITE, f_title, anchor="mm")
 
     # ── Formula / Key Equation highlight box (centre top) ────────────────────
     formula = data.get("formula") or data.get("key_equation") or ""
-    # fallback: pull from key_points[0] if it looks like an equation
     if not formula:
         kp = data.get("key_points", [])
         for pt in kp:
@@ -121,8 +144,7 @@ def create_concept_card(data: dict) -> bytes:
 
     if formula:
         _rr(draw, [28, 102, W - 28, 172], 14, (20, 28, 80), AMBER, w=2)
-        draw.text((W // 2, 137), str(formula)[:80],
-                  fill=AMBER, font=f_formula, anchor="mm")
+        _draw_sci(draw, (W // 2, 137), str(formula)[:80], AMBER, f_formula, anchor="mm")
         expl_y = 185
     else:
         expl_y = 102
@@ -130,34 +152,34 @@ def create_concept_card(data: dict) -> bytes:
     # ── Explanation ───────────────────────────────────────────────────────────
     _rr(draw, [28, expl_y, W - 28, expl_y + 195], 14, (18, 24, 60), INDIGO, w=1)
     explanation = data.get("explanation", "")
-    for i, line in enumerate(textwrap.wrap(explanation, width=86)[:5]):
-        draw.text((52, expl_y + 16 + i * 34), line, fill=TEXT_PRIMARY, font=f_body)
+    for i, line in enumerate(textwrap.wrap(_sci_ascii(explanation), width=86)[:5]):
+        _draw_sci(draw, (52, expl_y + 16 + i * 34), line, TEXT_PRIMARY, f_body)
 
     mid_y = expl_y + 210
 
     # ── Example  (left panel) ────────────────────────────────────────────────
     _rr(draw, [28, mid_y, 574, mid_y + 165], 14, (14, 22, 55), EMERALD, w=1)
-    draw.text((52, mid_y + 12), "EXAMPLE", fill=EMERALD, font=f_label)
+    _draw_sci(draw, (52, mid_y + 12), "EXAMPLE", EMERALD, f_label)
     draw.line([(52, mid_y + 30), (200, mid_y + 30)], fill=EMERALD, width=1)
-    for i, line in enumerate(textwrap.wrap(data.get("example", ""), width=40)[:4]):
-        draw.text((52, mid_y + 40 + i * 30), line, fill=TEXT_PRIMARY, font=f_small)
+    for i, line in enumerate(textwrap.wrap(_sci_ascii(data.get("example", "")), width=40)[:4]):
+        _draw_sci(draw, (52, mid_y + 40 + i * 30), line, TEXT_PRIMARY, f_small)
 
     # ── Fun fact (right panel) ────────────────────────────────────────────────
     _rr(draw, [606, mid_y, W - 28, mid_y + 165], 14, (22, 18, 55), AMBER, w=1)
-    draw.text((630, mid_y + 12), "FUN FACT", fill=AMBER, font=f_label)
+    _draw_sci(draw, (630, mid_y + 12), "FUN FACT", AMBER, f_label)
     draw.line([(630, mid_y + 30), (790, mid_y + 30)], fill=AMBER, width=1)
-    for i, line in enumerate(textwrap.wrap(data.get("fun_fact", ""), width=40)[:4]):
-        draw.text((630, mid_y + 40 + i * 30), line, fill=TEXT_PRIMARY, font=f_small)
+    for i, line in enumerate(textwrap.wrap(_sci_ascii(data.get("fun_fact", "")), width=40)[:4]):
+        _draw_sci(draw, (630, mid_y + 40 + i * 30), line, TEXT_PRIMARY, f_small)
 
     # ── Key points ────────────────────────────────────────────────────────────
     kp_y = mid_y + 180
     _rr(draw, [28, kp_y, W - 28, kp_y + 155], 14, (16, 20, 56), PURPLE, w=1)
-    draw.text((52, kp_y + 10), "KEY POINTS", fill=PURPLE, font=f_label)
+    _draw_sci(draw, (52, kp_y + 10), "KEY POINTS", PURPLE, f_label)
     dot_colors = [INDIGO, EMERALD, AMBER]
     for i, pt in enumerate(data.get("key_points", [])[:3]):
         cy = kp_y + 45 + i * 38
         draw.ellipse([52, cy, 70, cy + 18], fill=dot_colors[i % 3])
-        draw.text((82, cy - 1), str(pt)[:85], fill=TEXT_PRIMARY, font=f_small)
+        _draw_sci(draw, (82, cy - 1), str(pt)[:85], TEXT_PRIMARY, f_small)
 
     # ── Hindi summary strip ───────────────────────────────────────────────────
     draw.rectangle([0, H - 58, W, H], fill=(20, 26, 68))
@@ -184,12 +206,12 @@ def create_quiz_card(q_data: dict, q_num: int, total: int) -> bytes:
 
     # Header
     draw.rectangle([0, 0, W, 68], fill=PURPLE)
-    draw.text((W // 2, 34), f"Question  {q_num}  of  {total}", fill=WHITE, font=f_lg, anchor="mm")
+    _draw_sci(draw, (W // 2, 34), f"Question  {q_num}  of  {total}", WHITE, f_lg, anchor="mm")
 
     # Question box
     _rr(draw, [28, 80, W - 28, 200], 14, CARD_BG, PURPLE)
-    for i, line in enumerate(textwrap.wrap(q_data.get("question", ""), width=80)[:3]):
-        draw.text((52, 96 + i * 36), line, fill=TEXT_PRIMARY, font=f_md)
+    for i, line in enumerate(textwrap.wrap(_sci_ascii(q_data.get("question", "")), width=80)[:3]):
+        _draw_sci(draw, (52, 96 + i * 36), line, TEXT_PRIMARY, f_md)
 
     # Options (2x2 grid)
     opts   = q_data.get("options", {})
@@ -199,9 +221,9 @@ def create_quiz_card(q_data: dict, q_num: int, total: int) -> bytes:
         x1, y1 = pos[i]
         c = colors.get(key, INDIGO)
         _rr(draw, [x1, y1, x1 + 565, y1 + 115], 12, CARD_BG, c)
-        draw.text((x1 + 20, y1 + 16), f"{key})", fill=c, font=f_lg)
-        for j, line in enumerate(textwrap.wrap(str(val), width=30)[:2]):
-            draw.text((x1 + 72, y1 + 16 + j * 36), line, fill=TEXT_PRIMARY, font=f_sm)
+        _draw_sci(draw, (x1 + 20, y1 + 16), f"{key})", c, f_lg)
+        for j, line in enumerate(textwrap.wrap(_sci_ascii(str(val)), width=30)[:2]):
+            _draw_sci(draw, (x1 + 72, y1 + 16 + j * 36), line, TEXT_PRIMARY, f_sm)
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -222,30 +244,30 @@ def create_translation_card(data: dict) -> bytes:
 
     # Header
     draw.rectangle([0, 0, W, 64], fill=TEAL)
-    draw.text((W // 2, 32), "Bilingual Translation  |  ShikshAI", fill=WHITE, font=f_lg, anchor="mm")
+    _draw_sci(draw, (W // 2, 32), "Bilingual Translation  |  ShikshAI", WHITE, f_lg, anchor="mm")
 
     # Original text panel
     _rr(draw, [18, 76, 576, 280], 14, CARD_BG, TEAL)
-    draw.text((40, 86), "[ Original ]", fill=TEAL, font=f_sm)
-    for i, line in enumerate(textwrap.wrap(data.get("original", ""), width=44)[:4]):
-        draw.text((40, 116 + i * 38), line, fill=TEXT_PRIMARY, font=f_md)
+    _draw_sci(draw, (40, 86), "[ Original ]", TEAL, f_sm)
+    for i, line in enumerate(textwrap.wrap(_sci_ascii(data.get("original", "")), width=44)[:4]):
+        _draw_sci(draw, (40, 116 + i * 38), line, TEXT_PRIMARY, f_md)
 
-    # Translation panel
+    # Translation panel (may contain Devanagari — use _draw_text_safe)
     _rr(draw, [624, 76, W - 18, 280], 14, CARD_BG, INDIGO)
-    draw.text((644, 86), "[ Translation ]", fill=INDIGO, font=f_sm)
+    _draw_sci(draw, (644, 86), "[ Translation ]", INDIGO, f_sm)
     for i, line in enumerate(textwrap.wrap(data.get("translation", ""), width=44)[:4]):
-        draw.text((644, 116 + i * 38), line, fill=TEXT_PRIMARY, font=f_md)
+        _draw_text_safe(draw, (644, 116 + i * 38), line, TEXT_PRIMARY, f_md)
 
     # Key words strip
     _rr(draw, [18, 292, W - 18, 400], 12, CARD_BG, AMBER)
-    draw.text((40, 302), "Key Words:", fill=AMBER, font=f_sm)
+    _draw_sci(draw, (40, 302), "Key Words:", AMBER, f_sm)
     kws = data.get("key_words", [])[:5]
     for i, kw in enumerate(kws):
         if isinstance(kw, dict):
             pair = " -> ".join(str(v) for v in list(kw.values())[:2])
         else:
             pair = str(kw)
-        draw.text((40 + i * 232, 334), pair[:22], fill=TEXT_PRIMARY, font=f_sm)
+        _draw_text_safe(draw, (40 + i * 232, 334), pair[:22], TEXT_PRIMARY, f_sm)
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -269,18 +291,18 @@ def create_activity_card(data: dict) -> bytes:
 
     # Header bar
     draw.rectangle([0, 0, W, 68], fill=ORANGE)
-    title = data.get("title", "Classroom Activity")[:55]
-    draw.text((W // 2, 34), f"Activity  |  {title}",
-              fill=WHITE, font=f_xl, anchor="mm")
+    title = _sci_ascii(data.get("title", "Classroom Activity")[:55])
+    _draw_sci(draw, (W // 2, 34), f"Activity  |  {title}",
+              WHITE, f_xl, anchor="mm")
 
     # Objective strip
     _rr(draw, [18, 78, W - 18, 132], 10, CARD_BG, AMBER)
-    draw.text((36, 88), "[ Objective ]", fill=AMBER, font=f_sm)
+    _draw_sci(draw, (36, 88), "[ Objective ]", AMBER, f_sm)
     obj = data.get("objective", "")
-    for i, ln in enumerate(textwrap.wrap(obj, width=100)[:2]):
-        draw.text((36, 106 + i * 22), ln, fill=TEXT_PRIMARY, font=f_sm)
+    for i, ln in enumerate(textwrap.wrap(_sci_ascii(obj), width=100)[:2]):
+        _draw_sci(draw, (36, 106 + i * 22), ln, TEXT_PRIMARY, f_sm)
 
-    # Steps — up to 4 in a 2 × 2 grid
+    # Steps — up to 4 in a 2 x 2 grid
     steps  = data.get("steps", [])[:4]
     s_clrs = [INDIGO, EMERALD, AMBER, PURPLE]
     for idx, step in enumerate(steps):
@@ -292,23 +314,23 @@ def create_activity_card(data: dict) -> bytes:
 
         _rr(draw, [x1, y1, x2, y2], 12, CARD_BG, sc)
         draw.ellipse([x1 + 14, y1 + 14, x1 + 50, y1 + 50], fill=sc)
-        draw.text((x1 + 32, y1 + 32), str(step.get("step", idx + 1)),
-                  fill=WHITE, font=f_md, anchor="mm")
+        _draw_sci(draw, (x1 + 32, y1 + 32), str(step.get("step", idx + 1)),
+                  WHITE, f_md, anchor="mm")
         instr = step.get("instruction", "")
-        for j, ln in enumerate(textwrap.wrap(instr, width=36)[:3]):
-            draw.text((x1 + 62, y1 + 14 + j * 30), ln, fill=TEXT_PRIMARY, font=f_sm)
+        for j, ln in enumerate(textwrap.wrap(_sci_ascii(instr), width=36)[:3]):
+            _draw_sci(draw, (x1 + 62, y1 + 14 + j * 30), ln, TEXT_PRIMARY, f_sm)
         if step.get("duration_min"):
-            draw.text((x1 + 62, y1 + 112),
+            _draw_sci(draw, (x1 + 62, y1 + 112),
                       f"Duration: {step['duration_min']} min",
-                      fill=sc, font=f_sm)
+                      sc, f_sm)
 
     # Footer: group size + materials
     draw.rectangle([0, 548, W, H], fill=(20, 25, 65))
-    group = data.get("group_size", "")
-    mats  = " | ".join(str(m) for m in data.get("materials", [])[:3])
-    draw.text((W // 2, 568),
+    group = _sci_ascii(str(data.get("group_size", "")))
+    mats  = " | ".join(_sci_ascii(str(m)) for m in data.get("materials", [])[:3])
+    _draw_sci(draw, (W // 2, 568),
               f"Group: {group}   --   Materials: {mats}",
-              fill=TEXT_SECONDARY, font=f_sm, anchor="mm")
+              TEXT_SECONDARY, f_sm, anchor="mm")
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -383,8 +405,8 @@ def _diagram_right_triangle(data: dict) -> bytes:
 
     # Header
     draw.rectangle([0, 0, W, 56], fill=(28, 36, 100))
-    formula = data.get("formula") or "a² + b² = c²"
-    draw.text((W // 2, 28), formula, fill=AMBER, font=f_big, anchor="mm")
+    formula = data.get("formula") or "a^2 + b^2 = c^2"
+    _draw_sci(draw, (W // 2, 28), formula, AMBER, f_big, anchor="mm")
 
     # Triangle vertices  (right angle at bottom-left)
     Ax, Ay = 160, 480   # right angle
@@ -404,42 +426,42 @@ def _diagram_right_triangle(data: dict) -> bytes:
     draw.line([(Ax + m, Ay - m), (Ax + m, Ay)], fill=WHITE, width=2)
 
     # Side labels
-    draw.text((Ax - 44, (Ay + Cy) // 2), "a", fill=EMERALD, font=f_big, anchor="mm")
-    draw.text(((Ax + Bx) // 2, Ay + 36), "b", fill=INDIGO,  font=f_big, anchor="mm")
+    _draw_sci(draw, (Ax - 44, (Ay + Cy) // 2), "a", EMERALD, f_big, anchor="mm")
+    _draw_sci(draw, ((Ax + Bx) // 2, Ay + 36), "b", INDIGO,  f_big, anchor="mm")
     # Hypotenuse label (perpendicular to line BC)
     hx = (Bx + Cx) // 2 + 36
     hy = (By + Cy) // 2 - 10
-    draw.text((hx, hy), "c", fill=AMBER, font=f_big, anchor="mm")
+    _draw_sci(draw, (hx, hy), "c", AMBER, f_big, anchor="mm")
 
     # Small squares on each side (visual proof)
     sq = 60
     # Square on side a (left of vertical)
     draw.rectangle([Ax - sq - 4, Cy, Ax - 4, Ay], outline=EMERALD, width=2)
-    draw.text((Ax - sq // 2 - 4, (Cy + Ay) // 2), "a²", fill=EMERALD, font=f_sm, anchor="mm")
+    _draw_sci(draw, (Ax - sq // 2 - 4, (Cy + Ay) // 2), "a^2", EMERALD, f_sm, anchor="mm")
     # Square on side b (below horizontal)
     draw.rectangle([Ax, Ay + 4, Bx, Ay + sq + 4], outline=INDIGO, width=2)
-    draw.text(((Ax + Bx) // 2, Ay + sq // 2 + 4), "b²", fill=INDIGO, font=f_sm, anchor="mm")
+    _draw_sci(draw, ((Ax + Bx) // 2, Ay + sq // 2 + 4), "b^2", INDIGO, f_sm, anchor="mm")
 
     # Legend box
     _rr(draw, [640, 120, 875, 330], 12, (16, 22, 58), PURPLE)
-    draw.text((757, 140), "LEGEND", fill=PURPLE, font=f_sm, anchor="mm")
+    _draw_sci(draw, (757, 140), "LEGEND", PURPLE, f_sm, anchor="mm")
     items = [("a", EMERALD, "Perpendicular"), ("b", INDIGO, "Base"),
              ("c", AMBER, "Hypotenuse")]
     for i, (lbl, col, name) in enumerate(items):
         y = 168 + i * 52
         draw.ellipse([660, y, 690, y + 30], fill=col)
-        draw.text((676, y + 15), lbl, fill=WHITE, font=f_sm, anchor="mm")
-        draw.text((705, y + 15), name, fill=TEXT_PRIMARY, font=f_sm, anchor="lm")
+        _draw_sci(draw, (676, y + 15), lbl, WHITE, f_sm, anchor="mm")
+        _draw_sci(draw, (705, y + 15), name, TEXT_PRIMARY, f_sm, anchor="lm")
 
     # Formula box bottom
     _rr(draw, [640, 350, 875, 480], 12, (20, 28, 80), AMBER)
-    draw.text((757, 375), "Formula", fill=AMBER, font=f_tiny, anchor="mm")
-    draw.text((757, 415), "a² + b² = c²", fill=WHITE, font=f_med, anchor="mm")
-    draw.text((757, 455), "(Pythagoras)", fill=TEXT_SECONDARY, font=f_tiny, anchor="mm")
+    _draw_sci(draw, (757, 375), "Formula", AMBER, f_tiny, anchor="mm")
+    _draw_sci(draw, (757, 415), "a^2 + b^2 = c^2", WHITE, f_med, anchor="mm")
+    _draw_sci(draw, (757, 455), "(Pythagoras)", TEXT_SECONDARY, f_tiny, anchor="mm")
 
     # Footer
-    draw.text((W // 2, H - 16), "ShikshAI  |  Smart Board Visual",
-              fill=(60, 70, 130), font=f_tiny, anchor="mm")
+    _draw_sci(draw, (W // 2, H - 16), "ShikshAI  |  Smart Board Visual",
+              (60, 70, 130), f_tiny, anchor="mm")
 
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
@@ -451,21 +473,21 @@ def _diagram_circle(data: dict) -> bytes:
     f_big = _load_font(28); f_med = _load_font(22); f_sm = _load_font(17)
 
     draw.rectangle([0, 0, W, 52], fill=(28, 36, 100))
-    draw.text((W // 2, 26), data.get("formula") or "C = 2πr  |  A = πr²",
-              fill=AMBER, font=f_big, anchor="mm")
+    _draw_sci(draw, (W // 2, 26), data.get("formula") or "C = 2*pi*r  |  A = pi*r^2",
+              AMBER, f_big, anchor="mm")
 
     cx, cy, r = 280, 270, 170
     draw.ellipse([cx-r, cy-r, cx+r, cy+r], outline=INDIGO, width=4)
     draw.line([(cx, cy), (cx + r, cy)], fill=EMERALD, width=3)
     draw.line([(cx - r, cy), (cx + r, cy)], fill=AMBER, width=2)
     draw.ellipse([cx-6, cy-6, cx+6, cy+6], fill=WHITE)
-    draw.text((cx + r // 2, cy - 20), "r (radius)", fill=EMERALD, font=f_sm)
-    draw.text((cx - 10, cy - 20), "d (diameter)", fill=AMBER, font=f_sm)
+    _draw_sci(draw, (cx + r // 2, cy - 20), "r (radius)", EMERALD, f_sm)
+    _draw_sci(draw, (cx - 10, cy - 20), "d (diameter)", AMBER, f_sm)
 
     _rr(draw, [560, 100, 860, 440], 12, (16, 22, 58), PURPLE)
-    draw.text((710, 130), "Key Facts", fill=PURPLE, font=f_med, anchor="mm")
+    _draw_sci(draw, (710, 130), "Key Facts", PURPLE, f_med, anchor="mm")
     for i, pt in enumerate(data.get("key_points", [])[:3]):
-        draw.text((580, 170 + i * 70), f"• {str(pt)[:32]}", fill=TEXT_PRIMARY, font=f_sm)
+        _draw_sci(draw, (580, 170 + i * 70), f"* {_sci_ascii(str(pt)[:32])}", TEXT_PRIMARY, f_sm)
 
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
@@ -477,7 +499,7 @@ def _diagram_photosynthesis(data: dict) -> bytes:
     f_big = _load_font(26); f_med = _load_font(20); f_sm = _load_font(16)
 
     draw.rectangle([0, 0, W, 52], fill=(16, 80, 40))
-    draw.text((W // 2, 26), "Photosynthesis", fill=WHITE, font=f_big, anchor="mm")
+    _draw_sci(draw, (W // 2, 26), "Photosynthesis", WHITE, f_big, anchor="mm")
 
     boxes = [
         (60,  100, "Sunlight",   AMBER,   "Energy source"),
@@ -489,17 +511,17 @@ def _diagram_photosynthesis(data: dict) -> bytes:
     ]
     for x, y, lbl, col, sub in boxes:
         _rr(draw, [x, y, x+240, y+68], 10, (16, 24, 55), col)
-        draw.text((x+120, y+22), lbl, fill=col,          font=f_med, anchor="mm")
-        draw.text((x+120, y+50), sub, fill=TEXT_SECONDARY, font=f_sm, anchor="mm")
+        _draw_sci(draw, (x+120, y+22), lbl, col,           f_med, anchor="mm")
+        _draw_sci(draw, (x+120, y+50), sub, TEXT_SECONDARY, f_sm, anchor="mm")
 
-    # Arrows: inputs → chlorophyll → outputs
+    # Arrows: inputs -> chlorophyll -> outputs
     for sx, sy in [(180,168),(180,288),(180,408)]:
         draw.line([(sx, sy), (380, 254)], fill=WHITE, width=1)
     draw.line([(620, 254), (680, 164)], fill=AMBER, width=2)
     draw.line([(620, 254), (680, 344)], fill=TEAL,  width=2)
 
-    draw.text((W//2, H-16), "6CO2 + 6H2O + light  →  C6H12O6 + 6O2",
-              fill=AMBER, font=f_sm, anchor="mm")
+    _draw_sci(draw, (W//2, H-16), "6CO2 + 6H2O + light  ->  C6H12O6 + 6O2",
+              AMBER, f_sm, anchor="mm")
 
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
@@ -511,7 +533,7 @@ def _diagram_water_cycle(data: dict) -> bytes:
     f_big = _load_font(26); f_med = _load_font(20); f_sm = _load_font(15)
 
     draw.rectangle([0, 0, W, 52], fill=(10, 60, 100))
-    draw.text((W//2, 26), "Water Cycle", fill=WHITE, font=f_big, anchor="mm")
+    _draw_sci(draw, (W//2, 26), "Water Cycle", WHITE, f_big, anchor="mm")
 
     stages = [
         (120, 380, "Ocean/River", TEAL),
@@ -522,7 +544,7 @@ def _diagram_water_cycle(data: dict) -> bytes:
     ]
     for x, y, lbl, col in stages:
         _rr(draw, [x-10, y-20, x+160, y+40], 10, (14, 20, 55), col)
-        draw.text((x+75, y+10), lbl, fill=col, font=f_med, anchor="mm")
+        _draw_sci(draw, (x+75, y+10), lbl, col, f_med, anchor="mm")
 
     arrows = [(230,360,130,240),(230,180,380,120),(530,110,640,110),
               (780,120,800,280),(720,340,280,390)]
@@ -550,7 +572,7 @@ def _diagram_heart(data: dict) -> bytes:
 
     # Header
     draw.rectangle([0, 0, W, 48], fill=(60, 10, 10))
-    draw.text((W//2, 24), "Human Heart — Anatomy", fill=(255,220,220), font=f_big, anchor="mm")
+    _draw_sci(draw, (W//2, 24), "Human Heart -- Anatomy", (255,220,220), f_big, anchor="mm")
 
     # ── Heart body (approximate shape using overlapping ellipses) ─────────────
     hx, hy = 420, 360   # heart centre
@@ -565,25 +587,25 @@ def _diagram_heart(data: dict) -> bytes:
     # ── Internal chambers ─────────────────────────────────────────────────────
     # Right Atrium (viewer's left top) — blue (deoxygenated)
     draw.ellipse([hx-175, hy-175, hx-30, hy-30], fill=LIGHT_BLUE, outline=BLUE, width=2)
-    draw.text((hx-102, hy-112), "Right",   fill=BLUE, font=f_sm, anchor="mm")
-    draw.text((hx-102, hy-96),  "Atrium",  fill=BLUE, font=f_sm, anchor="mm")
+    _draw_sci(draw, (hx-102, hy-112), "Right",   BLUE, f_sm, anchor="mm")
+    _draw_sci(draw, (hx-102, hy-96),  "Atrium",  BLUE, f_sm, anchor="mm")
 
     # Left Atrium (viewer's right top) — red (oxygenated)
     draw.ellipse([hx+20, hy-175, hx+155, hy-30], fill=LIGHT_RED, outline=RED, width=2)
-    draw.text((hx+87, hy-112), "Left",   fill=RED, font=f_sm, anchor="mm")
-    draw.text((hx+87, hy-96),  "Atrium", fill=RED, font=f_sm, anchor="mm")
+    _draw_sci(draw, (hx+87, hy-112), "Left",   RED, f_sm, anchor="mm")
+    _draw_sci(draw, (hx+87, hy-96),  "Atrium", RED, f_sm, anchor="mm")
 
     # Right Ventricle (viewer's left bottom) — blue
     draw.polygon([(hx-175, hy-35), (hx-10, hy-35), (hx-55, hy+175), (hx-185, hy+80)],
                  fill=LIGHT_BLUE, outline=BLUE, width=2)
-    draw.text((hx-105, hy+60),  "Right",     fill=BLUE, font=f_sm, anchor="mm")
-    draw.text((hx-105, hy+76),  "Ventricle", fill=BLUE, font=f_sm, anchor="mm")
+    _draw_sci(draw, (hx-105, hy+60),  "Right",     BLUE, f_sm, anchor="mm")
+    _draw_sci(draw, (hx-105, hy+76),  "Ventricle", BLUE, f_sm, anchor="mm")
 
     # Left Ventricle (viewer's right bottom) — red, thick wall
     draw.polygon([(hx+10, hy-35), (hx+155, hy-35), (hx+100, hy+100), (hx-50, hy+175)],
                  fill=LIGHT_RED, outline=RED, width=3)
-    draw.text((hx+80, hy+45),  "Left",      fill=RED, font=f_sm, anchor="mm")
-    draw.text((hx+80, hy+61),  "Ventricle", fill=RED, font=f_sm, anchor="mm")
+    _draw_sci(draw, (hx+80, hy+45),  "Left",      RED, f_sm, anchor="mm")
+    _draw_sci(draw, (hx+80, hy+61),  "Ventricle", RED, f_sm, anchor="mm")
 
     # Septum line
     draw.line([(hx-10, hy-175), (hx-30, hy+170)], fill=OUTLINE, width=3)
@@ -606,7 +628,7 @@ def _diagram_heart(data: dict) -> bytes:
     def label_line(x1, y1, x2, y2, txt, col, right=True):
         draw.line([(x1, y1), (x2, y2)], fill=col, width=1)
         anchor = "lm" if right else "rm"
-        draw.text((x2 + (6 if right else -6), y2), txt, fill=col, font=f_sm, anchor=anchor)
+        _draw_sci(draw, (x2 + (6 if right else -6), y2), txt, col, f_sm, anchor=anchor)
 
     # Right labels
     label_line(hx+155, hy-225, 610, hy-260, "Aorta",            RED)
@@ -623,21 +645,21 @@ def _diagram_heart(data: dict) -> bytes:
     label_line(hx-10,  hy+230, 610, hy-100, "Aorta (to body)",    RED)
 
     # Septum label
-    draw.text((hx+10, hy-10), "Septum", fill=OUTLINE, font=f_tiny, anchor="lm")
+    _draw_sci(draw, (hx+10, hy-10), "Septum", OUTLINE, f_tiny, anchor="lm")
 
     # ── Legend ─────────────────────────────────────────────────────────────────
     lx, ly = 20, 540
     draw.rectangle([lx, ly, lx+460, ly+80], fill=(230,230,240), outline=OUTLINE, width=1)
     draw.rectangle([lx+10, ly+14, lx+36, ly+34], fill=LIGHT_BLUE, outline=BLUE, width=1)
-    draw.text((lx+44, ly+24), "Deoxygenated blood (from body → heart → lungs)", fill=BLUE, font=f_tiny, anchor="lm")
+    _draw_sci(draw, (lx+44, ly+24), "Deoxygenated blood (from body -> heart -> lungs)", BLUE, f_tiny, anchor="lm")
     draw.rectangle([lx+10, ly+44, lx+36, ly+64], fill=LIGHT_RED, outline=RED, width=1)
-    draw.text((lx+44, ly+54), "Oxygenated blood (from lungs → heart → body)",  fill=RED, font=f_tiny, anchor="lm")
+    _draw_sci(draw, (lx+44, ly+54), "Oxygenated blood (from lungs -> heart -> body)",  RED, f_tiny, anchor="lm")
 
     # Fun fact strip
     draw.rectangle([500, 540, W-10, 620], fill=(230,230,240), outline=OUTLINE, width=1)
-    draw.text((750, 560), "Heart Facts", fill=DARK, font=f_sm, anchor="mm")
-    draw.text((750, 580), "~72 beats/min | 5L blood/min", fill=RED, font=f_tiny, anchor="mm")
-    draw.text((750, 598), "Size of your fist | Beats 2.5B times in lifetime", fill=DARK, font=f_tiny, anchor="mm")
+    _draw_sci(draw, (750, 560), "Heart Facts", DARK, f_sm, anchor="mm")
+    _draw_sci(draw, (750, 580), "~72 beats/min | 5L blood/min", RED, f_tiny, anchor="mm")
+    _draw_sci(draw, (750, 598), "Size of your fist | Beats 2.5B times in lifetime", DARK, f_tiny, anchor="mm")
 
     # Remove reference image
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
@@ -650,7 +672,7 @@ def _diagram_food_chain(data: dict) -> bytes:
     f_big = _load_font(26); f_med = _load_font(20); f_sm = _load_font(16); f_tiny = _load_font(13)
 
     draw.rectangle([0, 0, W, 52], fill=(10, 60, 20))
-    draw.text((W//2, 26), "Food Chain", fill=WHITE, font=f_big, anchor="mm")
+    _draw_sci(draw, (W//2, 26), "Food Chain", WHITE, f_big, anchor="mm")
 
     levels = [
         (70,  200, 160, "Sun",          AMBER,   "Energy Source"),
@@ -661,16 +683,16 @@ def _diagram_food_chain(data: dict) -> bytes:
     ]
     for x, y, w, lbl, col, sub in levels:
         _rr(draw, [x, y, x+w, y+110], 12, (14,22,50), col, w=2)
-        draw.text((x+w//2, y+42), lbl, fill=col,          font=f_med, anchor="mm")
-        draw.text((x+w//2, y+70), sub, fill=TEXT_SECONDARY, font=f_sm, anchor="mm")
+        _draw_sci(draw, (x+w//2, y+42), lbl, col,           f_med, anchor="mm")
+        _draw_sci(draw, (x+w//2, y+70), sub, TEXT_SECONDARY, f_sm, anchor="mm")
 
     # Arrows between adjacent level boxes
     for ax, bx in [(230, 430), (430, 630)]:
         draw.line([(ax, 255), (bx, 255)], fill=WHITE, width=2)
         draw.polygon([(bx-8, 249), (bx-8, 261), (bx+2, 255)], fill=WHITE)
 
-    draw.text((W//2, H-20), "Energy flows: Sun → Producers → Consumers → Decomposers",
-              fill=AMBER, font=f_tiny, anchor="mm")
+    _draw_sci(draw, (W//2, H-20), "Energy flows: Sun -> Producers -> Consumers -> Decomposers",
+              AMBER, f_tiny, anchor="mm")
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
 
@@ -681,27 +703,27 @@ def _diagram_cell(data: dict) -> bytes:
     f_big = _load_font(24); f_med = _load_font(18); f_sm = _load_font(14); f_tiny = _load_font(12)
 
     draw.rectangle([0, 0, W, 50], fill=(20, 30, 80))
-    draw.text((W//2, 25), "Animal Cell Structure", fill=WHITE, font=f_big, anchor="mm")
+    _draw_sci(draw, (W//2, 25), "Animal Cell Structure", WHITE, f_big, anchor="mm")
 
     cx, cy = 300, 290
     # Cell membrane (outer)
     draw.ellipse([cx-210, cy-185, cx+210, cy+185], outline=EMERALD, width=3)
-    draw.text((cx, cy-200), "Cell Membrane", fill=EMERALD, font=f_sm, anchor="mm")
+    _draw_sci(draw, (cx, cy-200), "Cell Membrane", EMERALD, f_sm, anchor="mm")
     # Cytoplasm fill
     draw.ellipse([cx-205, cy-180, cx+205, cy+180], fill=(14, 20, 55))
     draw.ellipse([cx-210, cy-185, cx+210, cy+185], outline=EMERALD, width=3)
     # Nucleus
     draw.ellipse([cx-70, cy-60, cx+70, cy+60], fill=(30, 20, 70), outline=PURPLE, width=3)
-    draw.text((cx, cy), "Nucleus", fill=PURPLE, font=f_med, anchor="mm")
-    draw.text((cx, cy+22), "(DNA here)", fill=(180,150,230), font=f_sm, anchor="mm")
+    _draw_sci(draw, (cx, cy), "Nucleus", PURPLE, f_med, anchor="mm")
+    _draw_sci(draw, (cx, cy+22), "(DNA here)", (180,150,230), f_sm, anchor="mm")
     # Mitochondria
     draw.ellipse([cx+90, cy-40, cx+170, cy], fill=(40,20,10), outline=AMBER, width=2)
-    draw.text((cx+130, cy-20), "Mito-\nchondria", fill=AMBER, font=f_sm, anchor="mm")
+    _draw_sci(draw, (cx+130, cy-20), "Mito-\nchondria", AMBER, f_sm, anchor="mm")
 
     # Labels on right
     lx = 560
     _rr(draw, [lx, 60, lx+310, 460], 12, (14,20,54), INDIGO)
-    draw.text((lx+155, 85), "ORGANELLES", fill=INDIGO, font=f_med, anchor="mm")
+    _draw_sci(draw, (lx+155, 85), "ORGANELLES", INDIGO, f_med, anchor="mm")
     items = [
         ("Cell Membrane", EMERALD, "Controls what enters/exits"),
         ("Nucleus",       PURPLE,  "Brain of the cell, has DNA"),
@@ -711,8 +733,8 @@ def _diagram_cell(data: dict) -> bytes:
     for i, (name, col, desc) in enumerate(items):
         y = 115 + i * 82
         draw.ellipse([lx+18, y, lx+34, y+16], fill=col)
-        draw.text((lx+45, y+8), name, fill=col, font=f_sm, anchor="lm")
-        draw.text((lx+45, y+26), desc, fill=TEXT_SECONDARY, font=f_sm, anchor="lm")
+        _draw_sci(draw, (lx+45, y+8), name, col, f_sm, anchor="lm")
+        _draw_sci(draw, (lx+45, y+26), desc, TEXT_SECONDARY, f_sm, anchor="lm")
 
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
@@ -725,34 +747,34 @@ def _diagram_newton(data: dict) -> bytes:
 
     formula = data.get("formula") or "F = ma"
     draw.rectangle([0, 0, W, 55], fill=(28, 36, 100))
-    draw.text((W//2, 27), f"Newton's Laws  |  {formula}", fill=AMBER, font=f_big, anchor="mm")
+    _draw_sci(draw, (W//2, 27), f"Newton's Laws  |  {_sci_ascii(formula)}", AMBER, f_big, anchor="mm")
 
     laws = [
-        (40,  75, INDIGO,  "1st Law — Inertia",
+        (40,  75, INDIGO,  "1st Law - Inertia",
          "Object stays at rest or in motion", "unless an external force acts on it."),
-        (40, 220, EMERALD, "2nd Law — F = ma",
+        (40, 220, EMERALD, "2nd Law - F = ma",
          "Force = Mass x Acceleration", "More force = more acceleration."),
-        (40, 365, AMBER,   "3rd Law — Action-Reaction",
+        (40, 365, AMBER,   "3rd Law - Action-Reaction",
          "Every action has an equal and", "opposite reaction."),
     ]
     for x, y, col, title, l1, l2 in laws:
         _rr(draw, [x, y, x+520, y+120], 14, (16,22,58), col, w=2)
-        draw.text((x+20, y+22), title, fill=col,         font=f_med)
-        draw.text((x+20, y+58), l1,   fill=TEXT_PRIMARY, font=f_sm)
-        draw.text((x+20, y+82), l2,   fill=TEXT_SECONDARY, font=f_sm)
+        _draw_sci(draw, (x+20, y+22), title, col,          f_med)
+        _draw_sci(draw, (x+20, y+58), l1,   TEXT_PRIMARY,  f_sm)
+        _draw_sci(draw, (x+20, y+82), l2,   TEXT_SECONDARY, f_sm)
 
     # Formula visual
     _rr(draw, [600, 75, 870, 480], 14, (16,22,58), AMBER, w=2)
-    draw.text((735, 105), "F = m × a", fill=AMBER, font=f_big, anchor="mm")
+    _draw_sci(draw, (735, 105), "F = m x a", AMBER, f_big, anchor="mm")
     draw.line([(620, 125), (850, 125)], fill=AMBER, width=1)
     pairs = [("F", "Force (Newton, N)", AMBER),
              ("m", "Mass (kg)",         EMERALD),
-             ("a", "Acceleration (m/s²)", INDIGO)]
+             ("a", "Acceleration (m/s^2)", INDIGO)]
     for i, (sym, desc, col) in enumerate(pairs):
         y = 148 + i * 80
         draw.ellipse([625, y, 665, y+40], fill=col)
-        draw.text((645, y+20), sym, fill=WHITE, font=f_med, anchor="mm")
-        draw.text((675, y+20), desc, fill=TEXT_PRIMARY, font=f_sm, anchor="lm")
+        _draw_sci(draw, (645, y+20), sym, WHITE, f_med, anchor="mm")
+        _draw_sci(draw, (675, y+20), desc, TEXT_PRIMARY, f_sm, anchor="lm")
 
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
@@ -766,7 +788,7 @@ def _diagram_flowchart(data: dict) -> bytes:
 
     title = data.get("title", "Concept")
     draw.rectangle([0, 0, W, 56], fill=(28, 36, 100))
-    draw.text((W//2, 28), title[:50], fill=WHITE, font=f_big, anchor="mm")
+    _draw_sci(draw, (W//2, 28), _sci_ascii(title[:50]), WHITE, f_big, anchor="mm")
 
     pts = data.get("key_points", [])[:4]
     cols = [INDIGO, EMERALD, AMBER, PURPLE]
@@ -776,8 +798,8 @@ def _diagram_flowchart(data: dict) -> bytes:
         y = start_y + i * (node_h + 20)
         _rr(draw, [(W - node_w)//2, y, (W + node_w)//2, y + node_h],
             12, (16, 22, 60), cols[i % 4])
-        draw.text((W//2, y + node_h//2), str(pt)[:65],
-                  fill=TEXT_PRIMARY, font=f_med, anchor="mm")
+        _draw_sci(draw, (W//2, y + node_h//2), str(pt)[:65],
+                  TEXT_PRIMARY, f_med, anchor="mm")
         if i < len(pts) - 1:
             arr_x = W // 2
             draw.line([(arr_x, y + node_h), (arr_x, y + node_h + 20)],
