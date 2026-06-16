@@ -2,6 +2,7 @@
 Prompts for Feature 3: Bilingual Dictation & Translation.
 Two separate functions for English→Hindi and Hindi→English directions.
 """
+from prompts.hindi_quality import HINDI_LANG_RULE
 
 
 def build_en_to_hi(text: str) -> str:
@@ -12,18 +13,20 @@ TASK: Translate the following English text to Hindi for a classroom setting.
 ORIGINAL TEXT:
 "{text}"
 
+{HINDI_LANG_RULE}
+
 TRANSLATION GUIDELINES:
-* Use standard school Hindi (Shudh Hindi, Devanagari script)
-* Preserve subject-specific terms in both languages: "Photosynthesis (प्रकाश-संश्लेषण)"
-* Short, clear sentences suitable for students reading along on a smart board
+* Translation must sound like a real teacher's natural Hindi — not a dictionary translation
+* Preserve subject-specific terms with both scripts: "Photosynthesis (प्रकाश-संश्लेषण)"
+* Short, clear sentences suitable for students reading on a smart board
 * Transliteration must help the teacher read Hindi aloud correctly
 * Key vocabulary pairs help teachers explain word meanings
 
 OUTPUT: Return ONLY valid JSON — no markdown:
 {{
   "original": "{text}",
-  "translation": "पूर्ण हिंदी अनुवाद Devanagari script में",
-  "transliteration": "Roman-script pronunciation guide so teacher can read Hindi aloud (e.g., 'Prakaash-sanshleshan ek prakriya hai...')",
+  "translation": "पूर्ण हिंदी अनुवाद — natural, teacher-like, Devanagari script",
+  "transliteration": "Roman-script pronunciation guide so teacher can read Hindi aloud",
   "key_words": [
     {{"english": "word", "hindi": "शब्द", "pronunciation": "shabda"}}
   ],

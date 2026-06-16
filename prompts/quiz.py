@@ -2,12 +2,16 @@
 Prompt for Feature 2: Voice-Triggered Quiz Generation.
 Grade-adaptive difficulty and format.
 """
+from prompts.hindi_quality import get_hindi_lang_rule
 
 
 def build(topic: str, num_q: int, grade: str, subject: str = "General", lang: str = "en") -> str:
 
     if lang == "hi":
-        lang_rule = "शुद्ध हिंदी (Devanagari script) — NO Hinglish, NO Roman। सभी प्रश्न, विकल्प और व्याख्याएँ हिंदी में।"
+        lang_rule = (
+            get_hindi_lang_rule(grade)
+            + "\nCRITICAL: सभी प्रश्न, विकल्प (A/B/C/D) और व्याख्याएँ हिंदी में होनी चाहिए।"
+        )
     else:
         lang_rule = "Clear, simple English only. All questions, options, explanations in English."
 

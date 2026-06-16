@@ -2,6 +2,7 @@
 Prompt for Feature 1: Live Concept Simplification.
 Grade-adaptive: LKG/UKG use story format; Class 1-5 simple; 6-10 standard; 11-12 advanced.
 """
+from prompts.hindi_quality import get_hindi_lang_rule
 
 
 def build(concept: str, grade: str, subject: str = "General", lang: str = "en") -> str:
@@ -9,13 +10,12 @@ def build(concept: str, grade: str, subject: str = "General", lang: str = "en") 
     # ── Language rule ─────────────────────────────────────────────────────────
     if lang == "hi":
         lang_rule = (
-            "शुद्ध हिंदी (Devanagari script) में लिखो — NO Hinglish, NO Roman script।\n"
-            "भारतीय उदाहरण: गेहूँ की फसल, क्रिकेट, दीवाली का दीया, दाल-रोटी।\n"
-            "CRITICAL: title सहित सभी fields हिंदी में होने चाहिए।"
+            get_hindi_lang_rule(grade)
+            + "\nCRITICAL: title सहित सभी fields हिंदी में होने चाहिए।"
         )
-        speak_rule  = "speak_text: 2-3 उत्साही हिंदी वाक्य जो कक्षा में ज़ोर से पढ़े जाएँ"
+        speak_rule  = "speak_text: 2-3 उत्साही हिंदी वाक्य जो कक्षा में ज़ोर से पढ़े जाएँ — natural teacher tone"
         summary_key = "hindi_summary"
-        summary_val = f"एक पंक्ति में {concept} का सरल हिंदी सारांश"
+        summary_val = f"एक पंक्ति में {concept} का सरल, natural हिंदी सारांश"
     else:
         lang_rule = (
             "Clear, simple ENGLISH. Short sentences (max 12 words each).\n"

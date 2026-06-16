@@ -2,12 +2,16 @@
 Prompt for Feature 4: Hands-Free Activity Guide.
 Grade-adaptive: LKG/UKG use play-based; higher grades use structured activities.
 """
+from prompts.hindi_quality import get_hindi_lang_rule
 
 
 def build(description: str, duration: int, grade: str, subject: str = "General", lang: str = "en") -> str:
 
     if lang == "hi":
-        lang_rule = "शुद्ध हिंदी (Devanagari script) — NO Hinglish। सभी निर्देश, सामग्री, speak_intro हिंदी में।"
+        lang_rule = (
+            get_hindi_lang_rule(grade)
+            + "\nCRITICAL: सभी निर्देश, सामग्री, teacher_note और speak_intro हिंदी में होने चाहिए।"
+        )
         action_eg  = "\"सभी बच्चों को गोले में बिठाएँ\""
     else:
         lang_rule = "Clear, simple English throughout."

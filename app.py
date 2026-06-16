@@ -19,10 +19,13 @@ except Exception:
     pass
 
 # ── Page config ────────────────────────────────────────────────────────────────
-_favicon = Image.open(os.path.join(os.path.dirname(__file__), "favicon.png"))
+@st.cache_resource
+def _get_favicon():
+    return Image.open(os.path.join(os.path.dirname(__file__), "favicon.png"))
+
 st.set_page_config(
     page_title="ShikshAI — Smart Teaching Assistant",
-    page_icon=_favicon,
+    page_icon=_get_favicon(),
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -90,10 +93,14 @@ _SHADOW  = "0 1px 3px rgba(0,0,0,0.5),0 4px 20px rgba(0,0,0,0.3)"  if dark else 
 _ANS_OK_T= "#4ade80"      if dark else "#16a34a"
 _ANS_NG_T= "#f87171"      if dark else "#dc2626"
 
+st.markdown("""
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900&display=swap" rel="stylesheet">
+""", unsafe_allow_html=True)
+
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900&display=swap');
-
 /* ── Reset ──────────────────────────────────────────────────────────────── */
 *, html, body, [class*="css"] {{
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -737,7 +744,8 @@ def _show_confetti():
     components.html(f"<div>{pieces}</div>", height=0)
 
 
-# ── Gemini loader ──────────────────────────────────────────────────────────────
+# ── Gemini loader — cached so the OpenAI client is created once per session ─────
+@st.cache_resource
 def _load_gemini(api_key: str):
     from utils.ai_helper import setup_gemini
     return setup_gemini(api_key)

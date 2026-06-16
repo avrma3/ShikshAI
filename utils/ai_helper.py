@@ -142,10 +142,8 @@ def generate_diagram_code(model, concept: str, grade: str = "6",
 
 def _chat_system(grade: str, subject: str, lang: str) -> str:
     if lang == "hi":
-        lang_rule = (
-            "हमेशा शुद्ध हिंदी (Devanagari script) में जवाब दो — "
-            "कोई Hinglish नहीं, कोई Roman script नहीं।"
-        )
+        from prompts.hindi_quality import get_hindi_lang_rule
+        lang_rule = get_hindi_lang_rule(grade)
     else:
         lang_rule = (
             "Always answer in clear, simple English. "
@@ -163,18 +161,30 @@ def _chat_system(grade: str, subject: str, lang: str) -> str:
     else:
         level = "age 14-18, precise technical language, formulas where relevant, board-exam depth"
 
+    if lang == "hi":
+        fmt = (
+            "• पहले सवाल का सीधा जवाब दो (2-3 वाक्य)।\n"
+            "• फिर **मुख्य बिंदु:** bullet list में (3-5 बिंदु)।\n"
+            "• अंत में **उदाहरण:** एक भारतीय रोज़मर्रा का उदाहरण।\n"
+            "• ज़रूरी terms को **bold** करो।\n"
+            "• कुल जवाब 250 words से कम रखो जब तक ज़रूरत न हो।"
+        )
+    else:
+        fmt = (
+            "• Start with a direct answer to the question (2-3 sentences).\n"
+            "• Then add **Key Points:** as a bullet list (3-5 bullets).\n"
+            "• End with **Example:** one concrete example from Indian daily life "
+            "(cricket, farming, festivals, daal-roti, village life).\n"
+            "• Use **bold** for important terms.\n"
+            "• Keep total response under 250 words unless the question needs more depth."
+        )
+
     return (
         f"You are ShikshAI — an expert AI teacher for Grade {grade} {subject} students "
         f"in India.\n\n"
-        f"LANGUAGE RULE: {lang_rule}\n\n"
+        f"LANGUAGE RULE:\n{lang_rule}\n\n"
         f"STUDENT LEVEL: Grade {grade} ({level}).\n\n"
-        f"FORMATTING (always follow):\n"
-        f"• Start with a direct answer to the question (2-3 sentences).\n"
-        f"• Then add **Key Points:** as a bullet list (3-5 bullets).\n"
-        f"• End with **Example:** one concrete example from Indian daily life "
-        f"(cricket, farming, festivals, daal-roti, village life).\n"
-        f"• Use **bold** for important terms.\n"
-        f"• Keep total response under 250 words unless the question needs more depth.\n\n"
+        f"FORMATTING (always follow):\n{fmt}\n\n"
         f"Be warm, encouraging, and celebrate curiosity."
     )
 
