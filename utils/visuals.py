@@ -1,0 +1,971 @@
+"""
+PIL-based smart board visual card generator for ShikshAI.
+Creates high-resolution (1200px wide) cards optimised for classroom projectors.
+Emoji characters are avoided in PIL draws to maximise cross-platform compatibility.
+"""
+from PIL import Image, ImageDraw, ImageFont
+import io
+import textwrap
+
+# ── Colour palette ────────────────────────────────────────────────────────────
+BG            = (10,  14,  39)
+CARD_BG       = (22,  28,  60)
+INDIGO        = (99,  102, 241)
+PURPLE        = (139,  92, 246)
+EMERALD       = (16,  185, 129)
+AMBER         = (251, 191,  36)
+TEAL          = (20,  184, 166)
+TEXT_PRIMARY  = (226, 232, 240)
+TEXT_SECONDARY= (148, 163, 184)
+WHITE         = (255, 255, 255)
+
+
+def _load_font(size: int, index: int = 0) -> ImageFont.FreeTypeFont:
+    # Nirmala UI (Windows TTC) supports Devanagari + Latin — try first
+    for path in [
+        "C:\\Windows\\Fonts\\Nirmala.ttc",
+        "C:\\Windows\\Fonts\\NirmalaUI.ttf",
+        "arial.ttf", "Arial.ttf",
+        "DejaVuSans.ttf",
+        "LiberationSans-Regular.ttf",
+    ]:
+        try:
+            return ImageFont.truetype(path, size, index=index)
+        except Exception:
+            continue
+    return ImageFont.load_default()
+
+
+def _rr(draw, xy, r, fill, outline=None, w=2):
+    """Draw a rounded rectangle."""
+    draw.rounded_rectangle(xy, radius=r, fill=fill, outline=outline, width=w)
+
+
+def _gradient_bg(img: Image.Image, top: tuple, bot: tuple):
+    """Fill image with a vertical gradient."""
+    draw  = ImageDraw.Draw(img)
+    W, H  = img.size
+    for y in range(H):
+        t = y / H
+        r = int(top[0] + (bot[0] - top[0]) * t)
+        g = int(top[1] + (bot[1] - top[1]) * t)
+        b = int(top[2] + (bot[2] - top[2]) * t)
+        draw.line([(0, y), (W, y)], fill=(r, g, b))
+
+
+# ── Feature 1: Concept Card ───────────────────────────────────────────────────
+
+def create_concept_card(data: dict) -> bytes:
+    W, H = 1200, 820
+    img  = Image.new("RGB", (W, H), BG)
+    _gradient_bg(img, (8, 12, 35), (18, 24, 58))
+    draw = ImageDraw.Draw(img)
+
+    f_title  = _load_font(50)
+    f_formula= _load_font(42)
+    f_body   = _load_font(28)
+    f_small  = _load_font(24)
+    f_label  = _load_font(20)
+    f_tiny   = _load_font(18)
+
+    # ── Header bar ────────────────────────────────────────────────────────────
+    draw.rectangle([0, 0, W, 90], fill=(30, 40, 120))
+    draw.rectangle([0, 86, W, 90], fill=INDIGO)
+    title = data.get("title", "Concept")[:55]
+    draw.text((60, 45), "ShikshAI", fill=(160, 170, 255), font=f_label, anchor="lm")
+    draw.text((W // 2, 45), title, fill=WHITE, font=f_title, anchor="mm")
+
+    # ── Formula / Key Equation highlight box (centre top) ────────────────────
+    formula = data.get("formula") or data.get("key_equation") or ""
+    # fallback: pull from key_points[0] if it looks like an equation
+    if not formula:
+        kp = data.get("key_points", [])
+        for pt in kp:
+            if any(c in str(pt) for c in ["=", "+", "-", "^", "²", "³", "∑", "∆"]):
+                formula = str(pt)
+                break
+
+    if formula:
+        _rr(draw, [28, 102, W - 28, 172], 14, (20, 28, 80), AMBER, w=2)
+        draw.text((W // 2, 137), str(formula)[:80],
+                  fill=AMBER, font=f_formula, anchor="mm")
+        expl_y = 185
+    else:
+        expl_y = 102
+
+    # ── Explanation ───────────────────────────────────────────────────────────
+    _rr(draw, [28, expl_y, W - 28, expl_y + 195], 14, (18, 24, 60), INDIGO, w=1)
+    explanation = data.get("explanation", "")
+    for i, line in enumerate(textwrap.wrap(explanation, width=86)[:5]):
+        draw.text((52, expl_y + 16 + i * 34), line, fill=TEXT_PRIMARY, font=f_body)
+
+    mid_y = expl_y + 210
+
+    # ── Example  (left panel) ────────────────────────────────────────────────
+    _rr(draw, [28, mid_y, 574, mid_y + 165], 14, (14, 22, 55), EMERALD, w=1)
+    draw.text((52, mid_y + 12), "EXAMPLE", fill=EMERALD, font=f_label)
+    draw.line([(52, mid_y + 30), (200, mid_y + 30)], fill=EMERALD, width=1)
+    for i, line in enumerate(textwrap.wrap(data.get("example", ""), width=40)[:4]):
+        draw.text((52, mid_y + 40 + i * 30), line, fill=TEXT_PRIMARY, font=f_small)
+
+    # ── Fun fact (right panel) ────────────────────────────────────────────────
+    _rr(draw, [606, mid_y, W - 28, mid_y + 165], 14, (22, 18, 55), AMBER, w=1)
+    draw.text((630, mid_y + 12), "FUN FACT", fill=AMBER, font=f_label)
+    draw.line([(630, mid_y + 30), (790, mid_y + 30)], fill=AMBER, width=1)
+    for i, line in enumerate(textwrap.wrap(data.get("fun_fact", ""), width=40)[:4]):
+        draw.text((630, mid_y + 40 + i * 30), line, fill=TEXT_PRIMARY, font=f_small)
+
+    # ── Key points ────────────────────────────────────────────────────────────
+    kp_y = mid_y + 180
+    _rr(draw, [28, kp_y, W - 28, kp_y + 155], 14, (16, 20, 56), PURPLE, w=1)
+    draw.text((52, kp_y + 10), "KEY POINTS", fill=PURPLE, font=f_label)
+    dot_colors = [INDIGO, EMERALD, AMBER]
+    for i, pt in enumerate(data.get("key_points", [])[:3]):
+        cy = kp_y + 45 + i * 38
+        draw.ellipse([52, cy, 70, cy + 18], fill=dot_colors[i % 3])
+        draw.text((82, cy - 1), str(pt)[:85], fill=TEXT_PRIMARY, font=f_small)
+
+    # ── Hindi summary strip ───────────────────────────────────────────────────
+    draw.rectangle([0, H - 58, W, H], fill=(20, 26, 68))
+    draw.line([(0, H - 58), (W, H - 58)], fill=INDIGO, width=1)
+    hindi = data.get("hindi_summary", "")
+    draw.text((W // 2, H - 28), str(hindi)[:95], fill=AMBER, font=f_body, anchor="mm")
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+# ── Feature 2: Quiz Card ──────────────────────────────────────────────────────
+
+def create_quiz_card(q_data: dict, q_num: int, total: int) -> bytes:
+    W, H = 1200, 560
+    img  = Image.new("RGB", (W, H), BG)
+    _gradient_bg(img, (10, 14, 39), (18, 22, 55))
+    draw = ImageDraw.Draw(img)
+
+    f_lg = _load_font(40)
+    f_md = _load_font(32)
+    f_sm = _load_font(28)
+
+    # Header
+    draw.rectangle([0, 0, W, 68], fill=PURPLE)
+    draw.text((W // 2, 34), f"Question  {q_num}  of  {total}", fill=WHITE, font=f_lg, anchor="mm")
+
+    # Question box
+    _rr(draw, [28, 80, W - 28, 200], 14, CARD_BG, PURPLE)
+    for i, line in enumerate(textwrap.wrap(q_data.get("question", ""), width=80)[:3]):
+        draw.text((52, 96 + i * 36), line, fill=TEXT_PRIMARY, font=f_md)
+
+    # Options (2x2 grid)
+    opts   = q_data.get("options", {})
+    colors = {"A": INDIGO, "B": EMERALD, "C": AMBER, "D": (239, 68, 68)}
+    pos    = [(28, 215), (620, 215), (28, 345), (620, 345)]
+    for i, (key, val) in enumerate(opts.items()):
+        x1, y1 = pos[i]
+        c = colors.get(key, INDIGO)
+        _rr(draw, [x1, y1, x1 + 565, y1 + 115], 12, CARD_BG, c)
+        draw.text((x1 + 20, y1 + 16), f"{key})", fill=c, font=f_lg)
+        for j, line in enumerate(textwrap.wrap(str(val), width=30)[:2]):
+            draw.text((x1 + 72, y1 + 16 + j * 36), line, fill=TEXT_PRIMARY, font=f_sm)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+# ── Feature 3: Translation Card ───────────────────────────────────────────────
+
+def create_translation_card(data: dict) -> bytes:
+    W, H = 1200, 460
+    img  = Image.new("RGB", (W, H), BG)
+    _gradient_bg(img, (10, 14, 39), (16, 22, 50))
+    draw = ImageDraw.Draw(img)
+
+    f_lg = _load_font(38)
+    f_md = _load_font(30)
+    f_sm = _load_font(24)
+
+    # Header
+    draw.rectangle([0, 0, W, 64], fill=TEAL)
+    draw.text((W // 2, 32), "Bilingual Translation  |  ShikshAI", fill=WHITE, font=f_lg, anchor="mm")
+
+    # Original text panel
+    _rr(draw, [18, 76, 576, 280], 14, CARD_BG, TEAL)
+    draw.text((40, 86), "[ Original ]", fill=TEAL, font=f_sm)
+    for i, line in enumerate(textwrap.wrap(data.get("original", ""), width=44)[:4]):
+        draw.text((40, 116 + i * 38), line, fill=TEXT_PRIMARY, font=f_md)
+
+    # Translation panel
+    _rr(draw, [624, 76, W - 18, 280], 14, CARD_BG, INDIGO)
+    draw.text((644, 86), "[ Translation ]", fill=INDIGO, font=f_sm)
+    for i, line in enumerate(textwrap.wrap(data.get("translation", ""), width=44)[:4]):
+        draw.text((644, 116 + i * 38), line, fill=TEXT_PRIMARY, font=f_md)
+
+    # Key words strip
+    _rr(draw, [18, 292, W - 18, 400], 12, CARD_BG, AMBER)
+    draw.text((40, 302), "Key Words:", fill=AMBER, font=f_sm)
+    kws = data.get("key_words", [])[:5]
+    for i, kw in enumerate(kws):
+        if isinstance(kw, dict):
+            pair = " -> ".join(str(v) for v in list(kw.values())[:2])
+        else:
+            pair = str(kw)
+        draw.text((40 + i * 232, 334), pair[:22], fill=TEXT_PRIMARY, font=f_sm)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+# ── Feature 4: Activity Guide Card ───────────────────────────────────────────
+
+def create_activity_card(data: dict) -> bytes:
+    """PIL smart board visual for Feature 4 — Hands-Free Activity Guide."""
+    W, H   = 1200, 590
+    ORANGE = (234, 88,  12)
+    img    = Image.new("RGB", (W, H), BG)
+    _gradient_bg(img, BG, (18, 25, 60))
+    draw   = ImageDraw.Draw(img)
+
+    f_xl = _load_font(40)
+    f_lg = _load_font(32)
+    f_md = _load_font(26)
+    f_sm = _load_font(22)
+
+    # Header bar
+    draw.rectangle([0, 0, W, 68], fill=ORANGE)
+    title = data.get("title", "Classroom Activity")[:55]
+    draw.text((W // 2, 34), f"Activity  |  {title}",
+              fill=WHITE, font=f_xl, anchor="mm")
+
+    # Objective strip
+    _rr(draw, [18, 78, W - 18, 132], 10, CARD_BG, AMBER)
+    draw.text((36, 88), "[ Objective ]", fill=AMBER, font=f_sm)
+    obj = data.get("objective", "")
+    for i, ln in enumerate(textwrap.wrap(obj, width=100)[:2]):
+        draw.text((36, 106 + i * 22), ln, fill=TEXT_PRIMARY, font=f_sm)
+
+    # Steps — up to 4 in a 2 × 2 grid
+    steps  = data.get("steps", [])[:4]
+    s_clrs = [INDIGO, EMERALD, AMBER, PURPLE]
+    for idx, step in enumerate(steps):
+        row, col = divmod(idx, 2)
+        x1 = 18  + col * 594
+        y1 = 142 + row * 195
+        x2, y2 = x1 + 574, y1 + 180
+        sc = s_clrs[idx % 4]
+
+        _rr(draw, [x1, y1, x2, y2], 12, CARD_BG, sc)
+        draw.ellipse([x1 + 14, y1 + 14, x1 + 50, y1 + 50], fill=sc)
+        draw.text((x1 + 32, y1 + 32), str(step.get("step", idx + 1)),
+                  fill=WHITE, font=f_md, anchor="mm")
+        instr = step.get("instruction", "")
+        for j, ln in enumerate(textwrap.wrap(instr, width=36)[:3]):
+            draw.text((x1 + 62, y1 + 14 + j * 30), ln, fill=TEXT_PRIMARY, font=f_sm)
+        if step.get("duration_min"):
+            draw.text((x1 + 62, y1 + 112),
+                      f"Duration: {step['duration_min']} min",
+                      fill=sc, font=f_sm)
+
+    # Footer: group size + materials
+    draw.rectangle([0, 548, W, H], fill=(20, 25, 65))
+    group = data.get("group_size", "")
+    mats  = " | ".join(str(m) for m in data.get("materials", [])[:3])
+    draw.text((W // 2, 568),
+              f"Group: {group}   --   Materials: {mats}",
+              fill=TEXT_SECONDARY, font=f_sm, anchor="mm")
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+# ── Concept Diagram (PIL-based, replaces Mermaid for visual accuracy) ─────────
+
+def _detect_diagram_type(data: dict) -> str:
+    title   = (data.get("title") or "").lower()
+    formula = (data.get("formula") or "").lower()
+    mermaid = (data.get("mermaid") or "").lower()
+    text    = title + formula + mermaid
+
+    if any(k in text for k in ["pythagoras", "right triangle", "hypotenuse",
+                                "a² + b²", "a^2 + b^2"]):
+        return "right_triangle"
+    if any(k in text for k in ["circle", "circumference", "diameter", "radius",
+                                "pi r", "2pi", "πr"]):
+        return "circle"
+    if any(k in text for k in ["photosynthesis", "sunlight", "chlorophyll",
+                                "glucose", "co2", "carbon dioxide"]):
+        return "photosynthesis"
+    if any(k in text for k in ["water cycle", "evaporation", "condensation",
+                                "precipitation", "hydrological"]):
+        return "water_cycle"
+    if any(k in text for k in ["heart", "cardiac", "atrium", "ventricle",
+                                "heartbeat", "blood pump", "circulatory"]):
+        return "heart"
+    if any(k in text for k in ["food chain", "food web", "producer", "consumer",
+                                "herbivore", "carnivore", "decomposer"]):
+        return "food_chain"
+    if any(k in text for k in ["cell", "nucleus", "mitochondria", "membrane",
+                                "cytoplasm", "organelle"]):
+        return "cell"
+    if any(k in text for k in ["newton", "force", "motion", "acceleration",
+                                "f = ma", "friction", "gravity", "inertia"]):
+        return "newton"
+    return "flowchart"
+
+
+def create_concept_diagram(data: dict) -> bytes:
+    dtype = _detect_diagram_type(data)
+    if dtype == "right_triangle":
+        return _diagram_right_triangle(data)
+    if dtype == "circle":
+        return _diagram_circle(data)
+    if dtype == "photosynthesis":
+        return _diagram_photosynthesis(data)
+    if dtype == "water_cycle":
+        return _diagram_water_cycle(data)
+    if dtype == "heart":
+        return _diagram_heart(data)
+    if dtype == "food_chain":
+        return _diagram_food_chain(data)
+    if dtype == "cell":
+        return _diagram_cell(data)
+    if dtype == "newton":
+        return _diagram_newton(data)
+    return _diagram_flowchart(data)
+
+
+def _diagram_right_triangle(data: dict) -> bytes:
+    W, H = 900, 580
+    img  = Image.new("RGB", (W, H), (8, 12, 35))
+    draw = ImageDraw.Draw(img)
+
+    f_big  = _load_font(32)
+    f_med  = _load_font(24)
+    f_sm   = _load_font(18)
+    f_tiny = _load_font(15)
+
+    # Header
+    draw.rectangle([0, 0, W, 56], fill=(28, 36, 100))
+    formula = data.get("formula") or "a² + b² = c²"
+    draw.text((W // 2, 28), formula, fill=AMBER, font=f_big, anchor="mm")
+
+    # Triangle vertices  (right angle at bottom-left)
+    Ax, Ay = 160, 480   # right angle
+    Bx, By = 600, 480   # bottom right
+    Cx, Cy = 160, 140   # top
+
+    # Draw filled triangle
+    draw.polygon([(Ax, Ay), (Bx, By), (Cx, Cy)],
+                 fill=(18, 28, 72), outline=INDIGO)
+    draw.line([(Ax, Ay), (Bx, By)], fill=INDIGO, width=3)
+    draw.line([(Ax, Ay), (Cx, Cy)], fill=EMERALD, width=3)
+    draw.line([(Bx, By), (Cx, Cy)], fill=AMBER, width=3)
+
+    # Right-angle marker
+    m = 28
+    draw.line([(Ax, Ay - m), (Ax + m, Ay - m)], fill=WHITE, width=2)
+    draw.line([(Ax + m, Ay - m), (Ax + m, Ay)], fill=WHITE, width=2)
+
+    # Side labels
+    draw.text((Ax - 44, (Ay + Cy) // 2), "a", fill=EMERALD, font=f_big, anchor="mm")
+    draw.text(((Ax + Bx) // 2, Ay + 36), "b", fill=INDIGO,  font=f_big, anchor="mm")
+    # Hypotenuse label (perpendicular to line BC)
+    hx = (Bx + Cx) // 2 + 36
+    hy = (By + Cy) // 2 - 10
+    draw.text((hx, hy), "c", fill=AMBER, font=f_big, anchor="mm")
+
+    # Small squares on each side (visual proof)
+    sq = 60
+    # Square on side a (left of vertical)
+    draw.rectangle([Ax - sq - 4, Cy, Ax - 4, Ay], outline=EMERALD, width=2)
+    draw.text((Ax - sq // 2 - 4, (Cy + Ay) // 2), "a²", fill=EMERALD, font=f_sm, anchor="mm")
+    # Square on side b (below horizontal)
+    draw.rectangle([Ax, Ay + 4, Bx, Ay + sq + 4], outline=INDIGO, width=2)
+    draw.text(((Ax + Bx) // 2, Ay + sq // 2 + 4), "b²", fill=INDIGO, font=f_sm, anchor="mm")
+
+    # Legend box
+    _rr(draw, [640, 120, 875, 330], 12, (16, 22, 58), PURPLE)
+    draw.text((757, 140), "LEGEND", fill=PURPLE, font=f_sm, anchor="mm")
+    items = [("a", EMERALD, "Perpendicular"), ("b", INDIGO, "Base"),
+             ("c", AMBER, "Hypotenuse")]
+    for i, (lbl, col, name) in enumerate(items):
+        y = 168 + i * 52
+        draw.ellipse([660, y, 690, y + 30], fill=col)
+        draw.text((676, y + 15), lbl, fill=WHITE, font=f_sm, anchor="mm")
+        draw.text((705, y + 15), name, fill=TEXT_PRIMARY, font=f_sm, anchor="lm")
+
+    # Formula box bottom
+    _rr(draw, [640, 350, 875, 480], 12, (20, 28, 80), AMBER)
+    draw.text((757, 375), "Formula", fill=AMBER, font=f_tiny, anchor="mm")
+    draw.text((757, 415), "a² + b² = c²", fill=WHITE, font=f_med, anchor="mm")
+    draw.text((757, 455), "(Pythagoras)", fill=TEXT_SECONDARY, font=f_tiny, anchor="mm")
+
+    # Footer
+    draw.text((W // 2, H - 16), "ShikshAI  |  Smart Board Visual",
+              fill=(60, 70, 130), font=f_tiny, anchor="mm")
+
+    buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
+
+
+def _diagram_circle(data: dict) -> bytes:
+    W, H = 900, 500
+    img  = Image.new("RGB", (W, H), (8, 12, 35))
+    draw = ImageDraw.Draw(img)
+    f_big = _load_font(28); f_med = _load_font(22); f_sm = _load_font(17)
+
+    draw.rectangle([0, 0, W, 52], fill=(28, 36, 100))
+    draw.text((W // 2, 26), data.get("formula") or "C = 2πr  |  A = πr²",
+              fill=AMBER, font=f_big, anchor="mm")
+
+    cx, cy, r = 280, 270, 170
+    draw.ellipse([cx-r, cy-r, cx+r, cy+r], outline=INDIGO, width=4)
+    draw.line([(cx, cy), (cx + r, cy)], fill=EMERALD, width=3)
+    draw.line([(cx - r, cy), (cx + r, cy)], fill=AMBER, width=2)
+    draw.ellipse([cx-6, cy-6, cx+6, cy+6], fill=WHITE)
+    draw.text((cx + r // 2, cy - 20), "r (radius)", fill=EMERALD, font=f_sm)
+    draw.text((cx - 10, cy - 20), "d (diameter)", fill=AMBER, font=f_sm)
+
+    _rr(draw, [560, 100, 860, 440], 12, (16, 22, 58), PURPLE)
+    draw.text((710, 130), "Key Facts", fill=PURPLE, font=f_med, anchor="mm")
+    for i, pt in enumerate(data.get("key_points", [])[:3]):
+        draw.text((580, 170 + i * 70), f"• {str(pt)[:32]}", fill=TEXT_PRIMARY, font=f_sm)
+
+    buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
+
+
+def _diagram_photosynthesis(data: dict) -> bytes:
+    W, H = 900, 520
+    img  = Image.new("RGB", (W, H), (8, 12, 35))
+    draw = ImageDraw.Draw(img)
+    f_big = _load_font(26); f_med = _load_font(20); f_sm = _load_font(16)
+
+    draw.rectangle([0, 0, W, 52], fill=(16, 80, 40))
+    draw.text((W // 2, 26), "Photosynthesis", fill=WHITE, font=f_big, anchor="mm")
+
+    boxes = [
+        (60,  100, "Sunlight",   AMBER,   "Energy source"),
+        (60,  220, "Water (H2O)",TEAL,    "From roots"),
+        (60,  340, "CO2",        INDIGO,  "From air"),
+        (380, 220, "Chlorophyll",EMERALD, "Green pigment"),
+        (680, 130, "Glucose",    AMBER,   "Food / energy"),
+        (680, 310, "Oxygen O2",  TEAL,    "Released out"),
+    ]
+    for x, y, lbl, col, sub in boxes:
+        _rr(draw, [x, y, x+240, y+68], 10, (16, 24, 55), col)
+        draw.text((x+120, y+22), lbl, fill=col,          font=f_med, anchor="mm")
+        draw.text((x+120, y+50), sub, fill=TEXT_SECONDARY, font=f_sm, anchor="mm")
+
+    # Arrows: inputs → chlorophyll → outputs
+    for sx, sy in [(180,168),(180,288),(180,408)]:
+        draw.line([(sx, sy), (380, 254)], fill=WHITE, width=1)
+    draw.line([(620, 254), (680, 164)], fill=AMBER, width=2)
+    draw.line([(620, 254), (680, 344)], fill=TEAL,  width=2)
+
+    draw.text((W//2, H-16), "6CO2 + 6H2O + light  →  C6H12O6 + 6O2",
+              fill=AMBER, font=f_sm, anchor="mm")
+
+    buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
+
+
+def _diagram_water_cycle(data: dict) -> bytes:
+    W, H = 900, 500
+    img  = Image.new("RGB", (W, H), (6, 10, 30))
+    draw = ImageDraw.Draw(img)
+    f_big = _load_font(26); f_med = _load_font(20); f_sm = _load_font(15)
+
+    draw.rectangle([0, 0, W, 52], fill=(10, 60, 100))
+    draw.text((W//2, 26), "Water Cycle", fill=WHITE, font=f_big, anchor="mm")
+
+    stages = [
+        (120, 380, "Ocean/River", TEAL),
+        (120, 200, "Evaporation", AMBER),
+        (380, 100, "Condensation", INDIGO),
+        (640, 100, "Clouds",      PURPLE),
+        (750, 300, "Precipitation",TEAL),
+    ]
+    for x, y, lbl, col in stages:
+        _rr(draw, [x-10, y-20, x+160, y+40], 10, (14, 20, 55), col)
+        draw.text((x+75, y+10), lbl, fill=col, font=f_med, anchor="mm")
+
+    arrows = [(230,360,130,240),(230,180,380,120),(530,110,640,110),
+              (780,120,800,280),(720,340,280,390)]
+    for ax,ay,bx,by in arrows:
+        draw.line([(ax,ay),(bx,by)], fill=TEXT_SECONDARY, width=2)
+
+    buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
+
+
+def _diagram_heart(data: dict) -> bytes:
+    W, H = 1000, 640
+    img  = Image.new("RGB", (W, H), (245, 245, 250))
+    draw = ImageDraw.Draw(img)
+    f_big  = _load_font(26)
+    f_med  = _load_font(18)
+    f_sm   = _load_font(14)
+    f_tiny = _load_font(12)
+
+    RED        = (200, 40,  40)
+    BLUE       = (40,  70,  200)
+    LIGHT_RED  = (240, 160, 160)
+    LIGHT_BLUE = (160, 180, 240)
+    DARK       = (30,  30,  50)
+    OUTLINE    = (60,  60,  80)
+
+    # Header
+    draw.rectangle([0, 0, W, 48], fill=(60, 10, 10))
+    draw.text((W//2, 24), "Human Heart — Anatomy", fill=(255,220,220), font=f_big, anchor="mm")
+
+    # ── Heart body (approximate shape using overlapping ellipses) ─────────────
+    hx, hy = 420, 360   # heart centre
+
+    # Outer heart shape — two ellipses for top bumps + bottom point
+    draw.ellipse([hx-190, hy-200, hx+10,  hy+20],  fill=LIGHT_RED, outline=OUTLINE, width=2)  # left bump
+    draw.ellipse([hx-40,  hy-200, hx+160, hy+20],  fill=LIGHT_RED, outline=OUTLINE, width=2)  # right bump
+    # Bottom triangle/point
+    draw.polygon([(hx-190, hy-60), (hx+160, hy-60), (hx, hy+220)],
+                 fill=LIGHT_RED, outline=OUTLINE)
+
+    # ── Internal chambers ─────────────────────────────────────────────────────
+    # Right Atrium (viewer's left top) — blue (deoxygenated)
+    draw.ellipse([hx-175, hy-175, hx-30, hy-30], fill=LIGHT_BLUE, outline=BLUE, width=2)
+    draw.text((hx-102, hy-112), "Right",   fill=BLUE, font=f_sm, anchor="mm")
+    draw.text((hx-102, hy-96),  "Atrium",  fill=BLUE, font=f_sm, anchor="mm")
+
+    # Left Atrium (viewer's right top) — red (oxygenated)
+    draw.ellipse([hx+20, hy-175, hx+155, hy-30], fill=LIGHT_RED, outline=RED, width=2)
+    draw.text((hx+87, hy-112), "Left",   fill=RED, font=f_sm, anchor="mm")
+    draw.text((hx+87, hy-96),  "Atrium", fill=RED, font=f_sm, anchor="mm")
+
+    # Right Ventricle (viewer's left bottom) — blue
+    draw.polygon([(hx-175, hy-35), (hx-10, hy-35), (hx-55, hy+175), (hx-185, hy+80)],
+                 fill=LIGHT_BLUE, outline=BLUE, width=2)
+    draw.text((hx-105, hy+60),  "Right",     fill=BLUE, font=f_sm, anchor="mm")
+    draw.text((hx-105, hy+76),  "Ventricle", fill=BLUE, font=f_sm, anchor="mm")
+
+    # Left Ventricle (viewer's right bottom) — red, thick wall
+    draw.polygon([(hx+10, hy-35), (hx+155, hy-35), (hx+100, hy+100), (hx-50, hy+175)],
+                 fill=LIGHT_RED, outline=RED, width=3)
+    draw.text((hx+80, hy+45),  "Left",      fill=RED, font=f_sm, anchor="mm")
+    draw.text((hx+80, hy+61),  "Ventricle", fill=RED, font=f_sm, anchor="mm")
+
+    # Septum line
+    draw.line([(hx-10, hy-175), (hx-30, hy+170)], fill=OUTLINE, width=3)
+
+    # ── Blood vessels ──────────────────────────────────────────────────────────
+    # Superior Vena Cava (top-left, blue)
+    draw.rectangle([hx-155, hy-280, hx-115, hy-170], fill=LIGHT_BLUE, outline=BLUE, width=2)
+    # Inferior Vena Cava (bottom-left, blue)
+    draw.rectangle([hx-185, hy+175, hx-145, hy+280], fill=LIGHT_BLUE, outline=BLUE, width=2)
+    # Pulmonary Artery (top, blue → lungs)
+    draw.rectangle([hx-60, hy-280, hx-20, hy-165], fill=LIGHT_BLUE, outline=BLUE, width=2)
+    # Pulmonary Vein (top-right, red ← lungs)
+    draw.rectangle([hx+60, hy-280, hx+100, hy-165], fill=LIGHT_RED, outline=RED, width=2)
+    # Aorta (top-right, red → body)
+    draw.rectangle([hx+110, hy-280, hx+155, hy-170], fill=LIGHT_RED, outline=RED, width=2)
+    # Bottom Aorta
+    draw.rectangle([hx-30, hy+175, hx+10, hy+270], fill=LIGHT_RED, outline=RED, width=2)
+
+    # ── Leader lines + Labels (right side) ────────────────────────────────────
+    def label_line(x1, y1, x2, y2, txt, col, right=True):
+        draw.line([(x1, y1), (x2, y2)], fill=col, width=1)
+        anchor = "lm" if right else "rm"
+        draw.text((x2 + (6 if right else -6), y2), txt, fill=col, font=f_sm, anchor=anchor)
+
+    # Right labels
+    label_line(hx+155, hy-225, 610, hy-260, "Aorta",            RED)
+    label_line(hx+100, hy-225, 610, hy-220, "Pulmonary Vein",   RED)
+    label_line(hx+155, hy-80,  610, hy-180, "Left Atrium",      RED)
+    label_line(hx+155, hy+30,  610, hy-140, "Left Ventricle",   RED)
+
+    # Left labels
+    label_line(hx-135, hy-225, 220, hy-260, "Superior Vena Cava", BLUE, right=False)
+    label_line(hx-40,  hy-225, 220, hy-220, "Pulmonary Artery",   BLUE, right=False)
+    label_line(hx-175, hy-100, 220, hy-180, "Right Atrium",        BLUE, right=False)
+    label_line(hx-175, hy+30,  220, hy-140, "Right Ventricle",     BLUE, right=False)
+    label_line(hx-165, hy+225, 220, hy-100, "Inferior Vena Cava",  BLUE, right=False)
+    label_line(hx-10,  hy+230, 610, hy-100, "Aorta (to body)",    RED)
+
+    # Septum label
+    draw.text((hx+10, hy-10), "Septum", fill=OUTLINE, font=f_tiny, anchor="lm")
+
+    # ── Legend ─────────────────────────────────────────────────────────────────
+    lx, ly = 20, 540
+    draw.rectangle([lx, ly, lx+460, ly+80], fill=(230,230,240), outline=OUTLINE, width=1)
+    draw.rectangle([lx+10, ly+14, lx+36, ly+34], fill=LIGHT_BLUE, outline=BLUE, width=1)
+    draw.text((lx+44, ly+24), "Deoxygenated blood (from body → heart → lungs)", fill=BLUE, font=f_tiny, anchor="lm")
+    draw.rectangle([lx+10, ly+44, lx+36, ly+64], fill=LIGHT_RED, outline=RED, width=1)
+    draw.text((lx+44, ly+54), "Oxygenated blood (from lungs → heart → body)",  fill=RED, font=f_tiny, anchor="lm")
+
+    # Fun fact strip
+    draw.rectangle([500, 540, W-10, 620], fill=(230,230,240), outline=OUTLINE, width=1)
+    draw.text((750, 560), "Heart Facts", fill=DARK, font=f_sm, anchor="mm")
+    draw.text((750, 580), "~72 beats/min | 5L blood/min", fill=RED, font=f_tiny, anchor="mm")
+    draw.text((750, 598), "Size of your fist | Beats 2.5B times in lifetime", fill=DARK, font=f_tiny, anchor="mm")
+
+    # Remove reference image
+    buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
+
+
+def _diagram_food_chain(data: dict) -> bytes:
+    W, H = 900, 500
+    img  = Image.new("RGB", (W, H), (6, 14, 30))
+    draw = ImageDraw.Draw(img)
+    f_big = _load_font(26); f_med = _load_font(20); f_sm = _load_font(16); f_tiny = _load_font(13)
+
+    draw.rectangle([0, 0, W, 52], fill=(10, 60, 20))
+    draw.text((W//2, 26), "Food Chain", fill=WHITE, font=f_big, anchor="mm")
+
+    levels = [
+        (70,  200, 160, "Sun",          AMBER,   "Energy Source"),
+        (230, 160, 200, "Producers",    EMERALD, "Plants / Grass"),
+        (430, 160, 200, "Herbivores",   TEAL,    "Rabbit / Deer"),
+        (630, 160, 200, "Carnivores",   (220,80,80), "Fox / Lion"),
+        (730, 320, 160, "Decomposers",  PURPLE,  "Fungi / Bacteria"),
+    ]
+    for x, y, w, lbl, col, sub in levels:
+        _rr(draw, [x, y, x+w, y+110], 12, (14,22,50), col, w=2)
+        draw.text((x+w//2, y+42), lbl, fill=col,          font=f_med, anchor="mm")
+        draw.text((x+w//2, y+70), sub, fill=TEXT_SECONDARY, font=f_sm, anchor="mm")
+
+    # Arrows
+    for ax, ay, bx, by in [(230,255),(430,255),(630,255)]:
+        draw.line([(ax, 255),(bx, 255)], fill=WHITE, width=2)
+        draw.polygon([(bx-8,249),(bx-8,261),(bx+2,255)], fill=WHITE)
+
+    draw.text((W//2, H-20), "Energy flows: Sun → Producers → Consumers → Decomposers",
+              fill=AMBER, font=f_tiny, anchor="mm")
+    buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
+
+
+def _diagram_cell(data: dict) -> bytes:
+    W, H = 900, 520
+    img  = Image.new("RGB", (W, H), (8, 12, 35))
+    draw = ImageDraw.Draw(img)
+    f_big = _load_font(24); f_med = _load_font(18); f_sm = _load_font(14); f_tiny = _load_font(12)
+
+    draw.rectangle([0, 0, W, 50], fill=(20, 30, 80))
+    draw.text((W//2, 25), "Animal Cell Structure", fill=WHITE, font=f_big, anchor="mm")
+
+    cx, cy = 300, 290
+    # Cell membrane (outer)
+    draw.ellipse([cx-210, cy-185, cx+210, cy+185], outline=EMERALD, width=3)
+    draw.text((cx, cy-200), "Cell Membrane", fill=EMERALD, font=f_sm, anchor="mm")
+    # Cytoplasm fill
+    draw.ellipse([cx-205, cy-180, cx+205, cy+180], fill=(14, 20, 55))
+    draw.ellipse([cx-210, cy-185, cx+210, cy+185], outline=EMERALD, width=3)
+    # Nucleus
+    draw.ellipse([cx-70, cy-60, cx+70, cy+60], fill=(30, 20, 70), outline=PURPLE, width=3)
+    draw.text((cx, cy), "Nucleus", fill=PURPLE, font=f_med, anchor="mm")
+    draw.text((cx, cy+22), "(DNA here)", fill=(180,150,230), font=f_sm, anchor="mm")
+    # Mitochondria
+    draw.ellipse([cx+90, cy-40, cx+170, cy], fill=(40,20,10), outline=AMBER, width=2)
+    draw.text((cx+130, cy-20), "Mito-\nchondria", fill=AMBER, font=f_sm, anchor="mm")
+
+    # Labels on right
+    lx = 560
+    _rr(draw, [lx, 60, lx+310, 460], 12, (14,20,54), INDIGO)
+    draw.text((lx+155, 85), "ORGANELLES", fill=INDIGO, font=f_med, anchor="mm")
+    items = [
+        ("Cell Membrane", EMERALD, "Controls what enters/exits"),
+        ("Nucleus",       PURPLE,  "Brain of the cell, has DNA"),
+        ("Mitochondria",  AMBER,   "Powerhouse, makes energy"),
+        ("Cytoplasm",     TEAL,    "Jelly-like fluid inside"),
+    ]
+    for i, (name, col, desc) in enumerate(items):
+        y = 115 + i * 82
+        draw.ellipse([lx+18, y, lx+34, y+16], fill=col)
+        draw.text((lx+45, y+8), name, fill=col, font=f_sm, anchor="lm")
+        draw.text((lx+45, y+26), desc, fill=TEXT_SECONDARY, font=f_sm, anchor="lm")
+
+    buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
+
+
+def _diagram_newton(data: dict) -> bytes:
+    W, H = 900, 500
+    img  = Image.new("RGB", (W, H), (8, 12, 35))
+    draw = ImageDraw.Draw(img)
+    f_big = _load_font(28); f_med = _load_font(21); f_sm = _load_font(16); f_tiny = _load_font(14)
+
+    formula = data.get("formula") or "F = ma"
+    draw.rectangle([0, 0, W, 55], fill=(28, 36, 100))
+    draw.text((W//2, 27), f"Newton's Laws  |  {formula}", fill=AMBER, font=f_big, anchor="mm")
+
+    laws = [
+        (40,  75, INDIGO,  "1st Law — Inertia",
+         "Object stays at rest or in motion", "unless an external force acts on it."),
+        (40, 220, EMERALD, "2nd Law — F = ma",
+         "Force = Mass x Acceleration", "More force = more acceleration."),
+        (40, 365, AMBER,   "3rd Law — Action-Reaction",
+         "Every action has an equal and", "opposite reaction."),
+    ]
+    for x, y, col, title, l1, l2 in laws:
+        _rr(draw, [x, y, x+520, y+120], 14, (16,22,58), col, w=2)
+        draw.text((x+20, y+22), title, fill=col,         font=f_med)
+        draw.text((x+20, y+58), l1,   fill=TEXT_PRIMARY, font=f_sm)
+        draw.text((x+20, y+82), l2,   fill=TEXT_SECONDARY, font=f_sm)
+
+    # Formula visual
+    _rr(draw, [600, 75, 870, 480], 14, (16,22,58), AMBER, w=2)
+    draw.text((735, 105), "F = m × a", fill=AMBER, font=f_big, anchor="mm")
+    draw.line([(620, 125), (850, 125)], fill=AMBER, width=1)
+    pairs = [("F", "Force (Newton, N)", AMBER),
+             ("m", "Mass (kg)",         EMERALD),
+             ("a", "Acceleration (m/s²)", INDIGO)]
+    for i, (sym, desc, col) in enumerate(pairs):
+        y = 148 + i * 80
+        draw.ellipse([625, y, 665, y+40], fill=col)
+        draw.text((645, y+20), sym, fill=WHITE, font=f_med, anchor="mm")
+        draw.text((675, y+20), desc, fill=TEXT_PRIMARY, font=f_sm, anchor="lm")
+
+    buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
+
+
+def _diagram_flowchart(data: dict) -> bytes:
+    """Generic PIL flowchart — fallback for non-specific concepts."""
+    W, H = 900, 500
+    img  = Image.new("RGB", (W, H), (8, 12, 35))
+    draw = ImageDraw.Draw(img)
+    f_big = _load_font(26); f_med = _load_font(20); f_sm = _load_font(16)
+
+    title = data.get("title", "Concept")
+    draw.rectangle([0, 0, W, 56], fill=(28, 36, 100))
+    draw.text((W//2, 28), title[:50], fill=WHITE, font=f_big, anchor="mm")
+
+    pts = data.get("key_points", [])[:4]
+    cols = [INDIGO, EMERALD, AMBER, PURPLE]
+    node_w, node_h = 720, 72
+    start_y = 90
+    for i, pt in enumerate(pts):
+        y = start_y + i * (node_h + 20)
+        _rr(draw, [(W - node_w)//2, y, (W + node_w)//2, y + node_h],
+            12, (16, 22, 60), cols[i % 4])
+        draw.text((W//2, y + node_h//2), str(pt)[:65],
+                  fill=TEXT_PRIMARY, font=f_med, anchor="mm")
+        if i < len(pts) - 1:
+            arr_x = W // 2
+            draw.line([(arr_x, y + node_h), (arr_x, y + node_h + 20)],
+                      fill=cols[i % 4], width=2)
+
+    buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
+
+
+# ── Dynamic matplotlib diagram executor ──────────────────────────────────────
+
+def execute_diagram_code(code: str) -> bytes | None:
+    """Execute AI-generated matplotlib code and return PNG bytes."""
+    if not code or len(code) < 30:
+        return None
+    import tempfile, subprocess, os, sys
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as out_f:
+            out_path = out_f.name
+
+        code_fixed = code.replace("_OUTPUT_PATH", repr(out_path))
+
+        with tempfile.NamedTemporaryFile(suffix=".py", delete=False,
+                                         mode="w", encoding="utf-8") as script_f:
+            script_f.write("import warnings; warnings.filterwarnings('ignore')\n")
+            script_f.write("import matplotlib; matplotlib.use('Agg')\n")
+            script_f.write(code_fixed)
+            script_path = script_f.name
+
+        result = subprocess.run(
+            [sys.executable, script_path],
+            timeout=20, capture_output=True, text=True
+        )
+        if os.path.exists(out_path) and os.path.getsize(out_path) > 1000:
+            with open(out_path, "rb") as f:
+                data = f.read()
+            return data
+        return None
+    except Exception:
+        return None
+    finally:
+        for p in [script_path, out_path]:
+            try: os.unlink(p)
+            except Exception: pass
+
+
+# ── Human body parts diagram ──────────────────────────────────────────────────
+
+def create_body_parts_diagram(grade: str, lang: str = "en") -> bytes:
+    """Labeled human body figure — external parts for LKG-5, internal organs for Class 6+."""
+    W, H = 1000, 680
+    BG_COL    = (245, 248, 255)
+    SKIN      = (255, 213, 178)
+    SKIN_LINE = (195, 145, 105)
+    HAIR_COL  = (55,  32,  12)
+
+    img  = Image.new("RGB", (W, H), BG_COL)
+    draw = ImageDraw.Draw(img)
+
+    f_title = _load_font(26)
+    f_label = _load_font(17)
+    f_sm    = _load_font(13)
+
+    show_organs = grade not in ("LKG", "UKG", "1", "2", "3", "4", "5")
+    bx = 390   # body centre X
+
+    # Header
+    if lang == "hi":
+        title = "मानव शरीर — आंतरिक अंग" if show_organs else "मानव शरीर के अंग"
+    else:
+        title = "Human Body — Internal Organs" if show_organs else "Parts of the Human Body"
+    draw.rectangle([0, 0, W, 52], fill=(25, 55, 140))
+    draw.text((W // 2, 26), title, fill=(255, 255, 255), font=f_title, anchor="mm")
+
+    # ── Draw body ─────────────────────────────────────────────────────────────
+    # Hair
+    draw.ellipse([bx - 65, 62, bx + 65, 172], fill=HAIR_COL)
+    # Head
+    draw.ellipse([bx - 58, 76, bx + 58, 192], fill=SKIN, outline=SKIN_LINE, width=2)
+    # Ears
+    draw.ellipse([bx - 76, 108, bx - 55, 150], fill=SKIN, outline=SKIN_LINE, width=2)
+    draw.ellipse([bx + 55, 108, bx + 76, 150], fill=SKIN, outline=SKIN_LINE, width=2)
+    # Eyes
+    draw.ellipse([bx - 36, 116, bx - 14, 134], fill=(40, 90, 200))
+    draw.ellipse([bx + 14, 116, bx + 36, 134], fill=(40, 90, 200))
+    # Nose
+    draw.ellipse([bx - 5, 148, bx + 5, 158], fill=SKIN_LINE)
+    # Mouth
+    draw.arc([bx - 18, 162, bx + 18, 180], start=10, end=170, fill=(180, 40, 40), width=3)
+    # Neck
+    draw.rectangle([bx - 18, 192, bx + 18, 230], fill=SKIN, outline=SKIN_LINE, width=1)
+    # Torso
+    draw.rounded_rectangle([bx - 86, 230, bx + 86, 452], radius=18, fill=SKIN, outline=SKIN_LINE, width=2)
+    # Arms
+    draw.rounded_rectangle([bx - 136, 230, bx - 86, 394], radius=16, fill=SKIN, outline=SKIN_LINE, width=2)
+    draw.rounded_rectangle([bx + 86,  230, bx + 136, 394], radius=16, fill=SKIN, outline=SKIN_LINE, width=2)
+    # Hands
+    draw.ellipse([bx - 152, 394, bx - 72, 432], fill=SKIN, outline=SKIN_LINE, width=2)
+    draw.ellipse([bx + 72,  394, bx + 152, 432], fill=SKIN, outline=SKIN_LINE, width=2)
+    # Legs
+    draw.rounded_rectangle([bx - 76, 452, bx - 18, 618], radius=14, fill=SKIN, outline=SKIN_LINE, width=2)
+    draw.rounded_rectangle([bx + 18,  452, bx + 76, 618], radius=14, fill=SKIN, outline=SKIN_LINE, width=2)
+    # Feet
+    draw.ellipse([bx - 94, 618, bx + 2,   650], fill=SKIN, outline=SKIN_LINE, width=2)
+    draw.ellipse([bx - 2,  618, bx + 94,  650], fill=SKIN, outline=SKIN_LINE, width=2)
+
+    # ── Internal organs (Class 6+) ────────────────────────────────────────────
+    if show_organs:
+        BRAIN_C  = ((255, 200, 200), (200,  50,  50))
+        LUNG_C   = ((255, 170, 140), (200,  80,  60))
+        HEART_C  = ((255,  80,  80), (180,  20,  20))
+        LIVER_C  = ((180, 100,  60), (130,  55,  18))
+        STOM_C   = ((180, 220, 255), ( 60, 100, 200))
+        KID_C    = ((200, 255, 160), ( 80, 180,  60))
+        INT_C    = ((220, 200, 255), (100,  60, 180))
+
+        draw.ellipse([bx - 36,  84, bx + 36, 142], fill=BRAIN_C[0], outline=BRAIN_C[1], width=2)
+        draw.ellipse([bx - 82, 246, bx - 22, 350], fill=LUNG_C[0],  outline=LUNG_C[1],  width=2)
+        draw.ellipse([bx + 22, 246, bx + 82, 350], fill=LUNG_C[0],  outline=LUNG_C[1],  width=2)
+        draw.ellipse([bx - 46, 266, bx -  4, 306], fill=HEART_C[0], outline=HEART_C[1], width=2)
+        draw.ellipse([bx + 10, 342, bx + 84, 406], fill=LIVER_C[0], outline=LIVER_C[1], width=2)
+        draw.ellipse([bx - 58, 348, bx -  4, 412], fill=STOM_C[0],  outline=STOM_C[1],  width=2)
+        draw.ellipse([bx - 74, 374, bx - 42, 422], fill=KID_C[0],   outline=KID_C[1],   width=2)
+        draw.ellipse([bx + 42, 374, bx + 74, 422], fill=KID_C[0],   outline=KID_C[1],   width=2)
+        draw.ellipse([bx - 62, 412, bx + 62, 450], fill=INT_C[0],   outline=INT_C[1],   width=2)
+
+    # ── Leader line helpers ───────────────────────────────────────────────────
+    LEFT_X  = 150   # text right edge (left side labels)
+    RIGHT_X = 618   # text left edge (right side labels)
+
+    def leader_left(bx_pt, by_pt, label_y, text, col=(20, 50, 180)):
+        draw.line([(bx_pt, by_pt), (LEFT_X, label_y)], fill=col, width=1)
+        draw.ellipse([bx_pt - 4, by_pt - 4, bx_pt + 4, by_pt + 4], fill=col)
+        draw.text((LEFT_X - 4, label_y), text, fill=col, font=f_label, anchor="rm")
+
+    def leader_right(bx_pt, by_pt, label_y, text, col=(130, 30, 150)):
+        draw.line([(bx_pt, by_pt), (RIGHT_X, label_y)], fill=col, width=1)
+        draw.ellipse([bx_pt - 4, by_pt - 4, bx_pt + 4, by_pt + 4], fill=col)
+        draw.text((RIGHT_X + 4, label_y), text, fill=col, font=f_label, anchor="lm")
+
+    L = (20,  50, 180)   # blue  — left-side labels
+    R = (130, 30, 150)   # purple — right-side labels
+    G = (20, 130,  60)   # green  — leg/foot labels
+
+    # ── External labels (LKG–Class 5) ────────────────────────────────────────
+    if not show_organs:
+        if lang == "hi":
+            leader_left (bx - 30, 125, 108, "आँखें",      L)
+            leader_left (bx - 67, 129, 138, "कान",         L)
+            leader_left (bx - 111, 295, 270, "हाथ",        L)
+            leader_left (bx - 112, 413, 395, "उँगलियाँ",   L)
+            leader_left (bx - 47,  535, 505, "पैर",         G)
+            leader_left (bx - 48,  634, 622, "पंजे",        G)
+            leader_right(bx,        68,  90, "बाल",          R)
+            leader_right(bx + 4,   155, 132, "नाक",          R)
+            leader_right(bx + 14,  171, 162, "मुँह",         R)
+            leader_right(bx + 15,  211, 205, "गर्दन",        R)
+            leader_right(bx + 86,  242, 242, "कंधे",         R)
+            leader_right(bx + 84,  320, 318, "छाती",         R)
+            leader_right(bx + 84,  395, 390, "पेट",          R)
+            leader_right(bx + 47,  535, 480, "पैर",          G)
+            leader_right(bx + 48,  634, 608, "पंजे",         G)
+        else:
+            leader_left (bx - 30, 125, 108, "Eyes",        L)
+            leader_left (bx - 67, 129, 138, "Ears",        L)
+            leader_left (bx - 111, 295, 270, "Arms",       L)
+            leader_left (bx - 112, 413, 395, "Fingers",    L)
+            leader_left (bx - 47,  535, 505, "Legs",       G)
+            leader_left (bx - 48,  634, 622, "Feet",       G)
+            leader_right(bx,        68,  90, "Hair",        R)
+            leader_right(bx + 4,   155, 132, "Nose",        R)
+            leader_right(bx + 14,  171, 162, "Mouth",       R)
+            leader_right(bx + 15,  211, 205, "Neck",        R)
+            leader_right(bx + 86,  242, 242, "Shoulders",   R)
+            leader_right(bx + 84,  320, 318, "Chest",       R)
+            leader_right(bx + 84,  395, 390, "Stomach",     R)
+            leader_right(bx + 47,  535, 480, "Legs",        G)
+            leader_right(bx + 48,  634, 608, "Feet",        G)
+
+    # ── Organ labels (Class 6+) ───────────────────────────────────────────────
+    else:
+        BRAIN_L = (200, 50,  50)
+        HEART_L = (180, 20,  20)
+        LUNG_L  = (200, 80,  60)
+        LIVER_L = (130, 55,  18)
+        STOM_L  = ( 60, 100, 200)
+        KID_L   = ( 80, 180,  60)
+        INT_L   = (100,  60, 180)
+
+        if lang == "hi":
+            leader_left (bx - 34, 113,  72, "मस्तिष्क",   BRAIN_L)
+            leader_left (bx - 55, 298, 265, "फेफड़े",       LUNG_L)
+            leader_left (bx - 25, 286, 295, "हृदय",         HEART_L)
+            leader_left (bx - 31, 380, 352, "आमाशय",        STOM_L)
+            leader_left (bx - 58, 398, 382, "गुर्दे",       KID_L)
+            leader_left (bx - 30, 431, 420, "बड़ी आँत",     INT_L)
+            leader_right(bx + 55, 298, 265, "फेफड़े",        LUNG_L)
+            leader_right(bx + 47, 374, 332, "यकृत",          LIVER_L)
+            leader_right(bx + 58, 398, 362, "गुर्दे",        KID_L)
+        else:
+            leader_left (bx - 34, 113,  72, "Brain",        BRAIN_L)
+            leader_left (bx - 55, 298, 265, "Lungs",        LUNG_L)
+            leader_left (bx - 25, 286, 295, "Heart",        HEART_L)
+            leader_left (bx - 31, 380, 352, "Stomach",      STOM_L)
+            leader_left (bx - 58, 398, 382, "Kidneys",      KID_L)
+            leader_left (bx - 30, 431, 420, "Intestines",   INT_L)
+            leader_right(bx + 55, 298, 265, "Lungs",         LUNG_L)
+            leader_right(bx + 47, 374, 332, "Liver",         LIVER_L)
+            leader_right(bx + 58, 398, 362, "Kidneys",       KID_L)
+
+    # Footer
+    draw.rectangle([0, H - 26, W, H], fill=(25, 55, 140))
+    footer = "ShikshAI | Smart Board Visual" if lang == "en" else "ShikshAI | स्मार्ट बोर्ड विज़ुअल"
+    draw.text((W // 2, H - 13), footer, fill=(200, 220, 255), font=f_sm, anchor="mm")
+
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    return buf.getvalue()
+
+
+# ── Utility ───────────────────────────────────────────────────────────────────
+
+def img_to_display(img_bytes: bytes) -> str:
+    """Return a base64 data-URL for embedding in HTML."""
+    import base64
+    return "data:image/png;base64," + base64.b64encode(img_bytes).decode()
