@@ -113,15 +113,89 @@ def _has_devanagari(text: str) -> bool:
     return any(0x0900 <= ord(c) <= 0x097F for c in text)
 
 
+def _text_width(font, text: str) -> int:
+    """Return rendered pixel width of text for the given font."""
+    try:
+        return int(font.getlength(text))
+    except Exception:
+        try:
+            bb = font.getbbox(text)
+            return bb[2] - bb[0]
+        except Exception:
+            return len(text) * 12
+
+
+def _split_script_runs(text: str) -> list:
+    """Split text into (segment, is_devanagari) runs by character script."""
+    runs = []
+    cur, cur_deva = "", None
+    for c in text:
+        is_d = 0x0900 <= ord(c) <= 0x097F
+        if cur_deva is None:
+            cur_deva = is_d
+        if is_d != cur_deva:
+            if cur:
+                runs.append((cur, cur_deva))
+            cur, cur_deva = c, is_d
+        else:
+            cur += c
+    if cur:
+        runs.append((cur, cur_deva))
+    return runs
+
+
+def _mixed_line_width(text: str, size: int) -> int:
+    """Pixel width of mixed-script text across both fonts."""
+    f_deva = _load_font_deva(size)
+    f_lat  = _load_font(size)
+    total  = 0
+    for seg, is_d in _split_script_runs(text):
+        font    = f_deva if is_d else f_lat
+        seg_out = seg if is_d else _sci_ascii(seg)
+        total  += _text_width(font, seg_out)
+    return total
+
+
+def _draw_mixed_line(draw, x: int, y: int, text: str, fill, size: int):
+    """Left-aligned per-segment renderer for mixed Devanagari+Latin text.
+
+    NotoSansDevanagari has no Latin glyphs, so 'CO2 अवशोषित' needs
+    each run rendered with its own font.
+    """
+    f_deva = _load_font_deva(size)
+    f_lat  = _load_font(size)
+    for seg, is_d in _split_script_runs(text):
+        font    = f_deva if is_d else f_lat
+        seg_out = seg if is_d else _sci_ascii(seg)
+        try:
+            draw.text((x, y), seg_out, fill=fill, font=font)
+            x += _text_width(font, seg_out)
+        except Exception:
+            pass
+
+
 def _draw_content(draw, pos, text: str, fill, size: int, anchor=None):
-    """Smart content renderer: Devanagari font for Hindi, Latin+sci_ascii for English."""
-    text = str(text)
-    if _has_devanagari(text):
-        font = _load_font_deva(size)
-        _draw_text_safe(draw, pos, text, fill, font, anchor)
+    """Smart content renderer: per-segment font selection for mixed scripts."""
+    text     = str(text)
+    has_deva = _has_devanagari(text)
+    if not has_deva:
+        _draw_sci(draw, pos, text, fill, _load_font(size), anchor)
+    elif anchor is None:
+        # Left-aligned: render segment by segment
+        _draw_mixed_line(draw, pos[0], pos[1], text, fill, size)
+    elif anchor == "mm":
+        # Centred: measure total width, then left-align from the centre
+        total_w = _mixed_line_width(text, size)
+        f_ref   = _load_font_deva(size)
+        try:
+            bb     = f_ref.getbbox("अ")
+            text_h = bb[3] - bb[1]
+        except Exception:
+            text_h = size
+        _draw_mixed_line(draw, pos[0] - total_w // 2, pos[1] - text_h // 2, text, fill, size)
     else:
-        font = _load_font(size)
-        _draw_sci(draw, pos, text, fill, font, anchor)
+        # Other anchors: use Devanagari font directly
+        _draw_text_safe(draw, pos, text, fill, _load_font_deva(size), anchor)
 
 
 # Common Unicode → ASCII substitutions for scientific/math text
@@ -185,79 +259,112 @@ def _gradient_bg(img: Image.Image, top: tuple, bot: tuple):
 # ── Feature 1: Concept Card ───────────────────────────────────────────────────
 
 def create_concept_card(data: dict) -> bytes:
-    W, H = 1200, 820
-    img  = Image.new("RGB", (W, H), BG)
-    _gradient_bg(img, (8, 12, 35), (18, 24, 58))
-    draw = ImageDraw.Draw(img)
+    W = 1200
 
-    f_title  = _load_font(50)
-    f_formula= _load_font(42)
-    f_body   = _load_font(28)
-    f_small  = _load_font(24)
-    f_label  = _load_font(20)
-    f_tiny   = _load_font(18)
+    # Detect Hindi content → narrower wrap widths (Devanagari glyphs are wider)
+    is_hindi   = _has_devanagari(
+        data.get("title", "") + data.get("explanation", "")
+    )
+    wrap_expl  = 44 if is_hindi else 82
+    wrap_panel = 24 if is_hindi else 36
+    wrap_kp    = 54 if is_hindi else 82
 
-    # ── Header bar ────────────────────────────────────────────────────────────
-    draw.rectangle([0, 0, W, 90], fill=(30, 40, 120))
-    draw.rectangle([0, 86, W, 90], fill=INDIGO)
-    title = data.get("title", "Concept")[:55]
-    _draw_sci(draw, (60, 45), "ShikshAI", (160, 170, 255), f_label, anchor="lm")
-    _draw_content(draw, (W // 2, 45), title, WHITE, 50, anchor="mm")
-
-    # ── Formula / Key Equation highlight box (centre top) ────────────────────
+    # Pre-compute layout heights to size the canvas exactly
     formula = data.get("formula") or data.get("key_equation") or ""
     if not formula:
-        kp = data.get("key_points", [])
-        for pt in kp:
-            if any(c in str(pt) for c in ["=", "+", "-", "^", "²", "³", "∑", "∆"]):
+        for pt in data.get("key_points", []):
+            if any(c in str(pt) for c in ["=", "^", "²", "³", "∑", "∆"]):
                 formula = str(pt)
                 break
 
-    if formula:
-        _rr(draw, [28, 102, W - 28, 172], 14, (20, 28, 80), AMBER, w=2)
-        _draw_content(draw, (W // 2, 137), str(formula)[:80], AMBER, 42, anchor="mm")
-        expl_y = 185
+    expl_y     = 196 if formula else 104
+    expl_lines = textwrap.wrap(data.get("explanation", ""), width=wrap_expl)[:4]
+    expl_h     = 46 + max(len(expl_lines), 1) * 36 + 10
+    mid_y      = expl_y + expl_h + 12
+    PANEL_H    = 184
+    kp_y       = mid_y + PANEL_H + 12
+    kpts       = data.get("key_points", [])[:3]
+    kp_h       = 44 + max(len(kpts), 1) * 46 + 8
+    H          = kp_y + kp_h + 78   # 14px gap + 64px strip
+
+    img  = Image.new("RGB", (W, H), BG)
+    _gradient_bg(img, (6, 10, 30), (18, 24, 62))
+    draw = ImageDraw.Draw(img)
+
+    f_lbl    = _load_font(18)
+    f_lbl_sm = _load_font(16)
+    f_badge  = _load_font(15)
+
+    # ── HEADER (y 0-96) ───────────────────────────────────────────────────────
+    draw.rectangle([0, 0, W, 96], fill=(20, 28, 96))
+    draw.rectangle([0,  0,  5, 96], fill=INDIGO)
+    draw.rectangle([W-5, 0, W, 96], fill=PURPLE)
+    draw.rectangle([0, 93, W, 96], fill=INDIGO)
+
+    _rr(draw, [14, 10, 126, 34], 8, INDIGO, None)
+    _draw_sci(draw, (70, 22), "ShikshAI", WHITE, f_badge, anchor="mm")
+
+    title_text  = data.get("title", "Concept")
+    title_wrap  = 30 if is_hindi else 46
+    title_lines = textwrap.wrap(title_text, width=title_wrap)[:2]
+    if len(title_lines) == 1:
+        _draw_content(draw, (W // 2, 52), title_lines[0], WHITE, 44, anchor="mm")
     else:
-        expl_y = 102
+        _draw_content(draw, (W // 2, 29), title_lines[0], WHITE, 36, anchor="mm")
+        _draw_content(draw, (W // 2, 70), title_lines[1], (215, 220, 255), 32, anchor="mm")
 
-    # ── Explanation ───────────────────────────────────────────────────────────
-    _rr(draw, [28, expl_y, W - 28, expl_y + 195], 14, (18, 24, 60), INDIGO, w=1)
-    explanation = data.get("explanation", "")
-    for i, line in enumerate(textwrap.wrap(explanation, width=86)[:5]):
-        _draw_content(draw, (52, expl_y + 16 + i * 34), line, TEXT_PRIMARY, 28)
+    # ── FORMULA BOX (y 104-184) ───────────────────────────────────────────────
+    if formula:
+        _rr(draw, [32, 104, W - 32, 184], 14, (24, 20, 6), AMBER, w=2)
+        _rr(draw, [50, 104, 150, 122], 8, AMBER, None)
+        _draw_sci(draw, (100, 113), "FORMULA", BG, f_badge, anchor="mm")
+        # Always Latin font for formulas — mixed content would break Devanagari font
+        _draw_sci(draw, (W // 2, 148), str(formula)[:85], AMBER, _load_font(36), anchor="mm")
 
-    mid_y = expl_y + 210
+    # ── EXPLANATION ───────────────────────────────────────────────────────────
+    _rr(draw, [32, expl_y, W - 32, expl_y + expl_h], 14, (14, 18, 55), INDIGO, w=1)
+    draw.rectangle([32, expl_y + 14, 36, expl_y + expl_h - 14], fill=INDIGO)
+    _draw_sci(draw, (52, expl_y + 14), "EXPLANATION", (120, 125, 255), f_lbl)
+    draw.line([(52, expl_y + 30), (215, expl_y + 30)], fill=(70, 75, 200), width=1)
+    for i, line in enumerate(expl_lines):
+        _draw_content(draw, (52, expl_y + 38 + i * 36), line, TEXT_PRIMARY, 26)
 
-    # ── Example  (left panel) ────────────────────────────────────────────────
-    _rr(draw, [28, mid_y, 574, mid_y + 165], 14, (14, 22, 55), EMERALD, w=1)
-    _draw_sci(draw, (52, mid_y + 12), "EXAMPLE", EMERALD, f_label)
-    draw.line([(52, mid_y + 30), (200, mid_y + 30)], fill=EMERALD, width=1)
-    for i, line in enumerate(textwrap.wrap(data.get("example", ""), width=40)[:4]):
-        _draw_content(draw, (52, mid_y + 40 + i * 30), line, TEXT_PRIMARY, 24)
+    # ── EXAMPLE + FUN FACT (two-column) ──────────────────────────────────────
+    # Example (left)
+    _rr(draw, [32, mid_y, 576, mid_y + PANEL_H], 14, (10, 20, 50), EMERALD, w=2)
+    draw.rectangle([32, mid_y + 14, 36, mid_y + PANEL_H - 14], fill=EMERALD)
+    _draw_sci(draw, (52, mid_y + 14), "EXAMPLE", EMERALD, f_lbl)
+    draw.line([(52, mid_y + 30), (230, mid_y + 30)], fill=EMERALD, width=1)
+    for i, line in enumerate(textwrap.wrap(data.get("example", ""), width=wrap_panel)[:4]):
+        _draw_content(draw, (52, mid_y + 40 + i * 32), line, TEXT_PRIMARY, 24)
 
-    # ── Fun fact (right panel) ────────────────────────────────────────────────
-    _rr(draw, [606, mid_y, W - 28, mid_y + 165], 14, (22, 18, 55), AMBER, w=1)
-    _draw_sci(draw, (630, mid_y + 12), "FUN FACT", AMBER, f_label)
-    draw.line([(630, mid_y + 30), (790, mid_y + 30)], fill=AMBER, width=1)
-    for i, line in enumerate(textwrap.wrap(data.get("fun_fact", ""), width=40)[:4]):
-        _draw_content(draw, (630, mid_y + 40 + i * 30), line, TEXT_PRIMARY, 24)
+    # Fun Fact (right)
+    _rr(draw, [624, mid_y, W - 32, mid_y + PANEL_H], 14, (22, 16, 50), AMBER, w=2)
+    draw.rectangle([624, mid_y + 14, 628, mid_y + PANEL_H - 14], fill=AMBER)
+    _draw_sci(draw, (644, mid_y + 14), "FUN FACT", AMBER, f_lbl)
+    draw.line([(644, mid_y + 30), (822, mid_y + 30)], fill=AMBER, width=1)
+    for i, line in enumerate(textwrap.wrap(data.get("fun_fact", ""), width=wrap_panel)[:4]):
+        _draw_content(draw, (644, mid_y + 40 + i * 32), line, TEXT_PRIMARY, 24)
 
-    # ── Key points ────────────────────────────────────────────────────────────
-    kp_y = mid_y + 180
-    _rr(draw, [28, kp_y, W - 28, kp_y + 155], 14, (16, 20, 56), PURPLE, w=1)
-    _draw_sci(draw, (52, kp_y + 10), "KEY POINTS", PURPLE, f_label)
+    # ── KEY POINTS ────────────────────────────────────────────────────────────
+    _rr(draw, [32, kp_y, W - 32, kp_y + kp_h], 14, (14, 16, 54), PURPLE, w=1)
+    draw.rectangle([32, kp_y + 14, 36, kp_y + kp_h - 14], fill=PURPLE)
+    _draw_sci(draw, (52, kp_y + 12), "KEY POINTS", (180, 140, 255), f_lbl)
+    draw.line([(52, kp_y + 28), (200, kp_y + 28)], fill=(100, 60, 200), width=1)
     dot_colors = [INDIGO, EMERALD, AMBER]
-    for i, pt in enumerate(data.get("key_points", [])[:3]):
-        cy = kp_y + 45 + i * 38
-        draw.ellipse([52, cy, 70, cy + 18], fill=dot_colors[i % 3])
-        _draw_content(draw, (82, cy - 1), str(pt)[:85], TEXT_PRIMARY, 24)
+    for i, pt in enumerate(kpts):
+        cy  = kp_y + 38 + i * 46
+        col = dot_colors[i % 3]
+        draw.ellipse([52, cy, 78, cy + 26], fill=col)
+        _draw_sci(draw, (65, cy + 13), str(i + 1), WHITE, f_lbl_sm, anchor="mm")
+        pt_lines = textwrap.wrap(str(pt), width=wrap_kp)
+        _draw_content(draw, (90, cy + 2), pt_lines[0] if pt_lines else str(pt), TEXT_PRIMARY, 24)
 
-    # ── Hindi summary strip ───────────────────────────────────────────────────
-    draw.rectangle([0, H - 58, W, H], fill=(20, 26, 68))
-    draw.line([(0, H - 58), (W, H - 58)], fill=INDIGO, width=1)
-    hindi = data.get("hindi_summary", "")
-    f_hindi = _load_font_deva(28)
-    _draw_text_safe(draw, (W // 2, H - 28), str(hindi)[:95], AMBER, f_hindi, anchor="mm")
+    # ── HINDI SUMMARY STRIP ───────────────────────────────────────────────────
+    draw.rectangle([0, H - 60, W, H], fill=(14, 20, 62))
+    draw.line([(0, H - 60), (W, H - 60)], fill=INDIGO, width=2)
+    hindi = str(data.get("hindi_summary", ""))[:100]
+    _draw_content(draw, (W // 2, H - 29), hindi, AMBER, 26, anchor="mm")
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")
