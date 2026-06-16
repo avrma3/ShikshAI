@@ -1,9 +1,17 @@
 # ShikshAI — Voice-Enabled AI Teaching Assistant
 
-> Connecting Dreams Foundation · Round 2 Technical Assignment · Option A
+> Connecting Dreams Foundation · Round 2 · Option A
 
-A voice-first, bilingual AI teaching assistant built for Haryana government school smart classrooms.
-Supports Hinglish (Hindi + English) and is optimized for large smart board display.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?logo=streamlit)](https://shikshai-ncaytqb9nbjaa3n7kycetd.streamlit.app/)
+[![GitHub](https://img.shields.io/badge/GitHub-avrma3%2FShikshAI-181717?logo=github)](https://github.com/avrma3/ShikshAI)
+
+A voice-first, bilingual AI teaching assistant for Indian classrooms. Supports Hindi, English, and Hinglish — optimized for smart board display.
+
+---
+
+## Live Demo
+
+**https://shikshai-ncaytqb9nbjaa3n7kycetd.streamlit.app/**
 
 ---
 
@@ -11,10 +19,12 @@ Supports Hinglish (Hindi + English) and is optimized for large smart board displ
 
 | Feature | Description |
 |---|---|
-| 🧠 Live Concept Simplification | Speak any concept — AI explains in Hinglish with a smart board visual card |
-| ❓ Voice-Triggered Quizzing | Say a topic — AI generates MCQ quiz with interactive answer reveal |
-| 🌐 Bilingual Dictation & Translation | Hindi ↔ English transcription + translation with visual display |
-| ⏱️ Hands-Free Activity Guide | Describe an activity — AI creates step-by-step guide + live countdown timer |
+| 🧠 Concept Simplifier | Speak any concept — AI explains in Hinglish with a visual diagram |
+| ❓ Voice Quiz | Say a topic — AI generates MCQ quiz with interactive answer reveal |
+| 🌐 Bilingual Translation | Hindi ↔ English transcription + translation with audio playback |
+| ⏱️ Activity Guide | Describe an activity — AI creates step-by-step guide + countdown timer |
+| 📊 Teacher Dashboard | Session history, usage analytics, PDF export |
+| 💬 Ask AI | Freeform voice/text chat with the AI assistant |
 
 ---
 
@@ -23,74 +33,77 @@ Supports Hinglish (Hindi + English) and is optimized for large smart board displ
 | Component | Tool |
 |---|---|
 | UI Framework | Streamlit |
-| LLM | Google Gemini 1.5 Flash |
-| Speech-to-Text | faster-whisper (OpenAI Whisper base model, CPU) |
-| Text-to-Speech | gTTS (Google Text-to-Speech) |
-| Visuals | Pillow (PIL) |
-| Deployment | Streamlit Community Cloud / Hugging Face Spaces |
+| LLM | GPT-4o (OpenAI) |
+| Speech-to-Text | OpenAI Whisper API |
+| Text-to-Speech | OpenAI TTS (Nova voice) |
+| Visuals | Pillow (PIL), Matplotlib |
+| Deployment | Streamlit Community Cloud |
 
 ---
 
-## Setup
+## Local Setup
 
 ### 1. Clone & Install
 
 ```bash
-git clone <your-repo-url>
-cd "Connecting Dreams Technical Assignment"
+git clone https://github.com/avrma3/ShikshAI.git
+cd ShikshAI
 pip install -r requirements.txt
 ```
 
-### 2. Get Gemini API Key (Free)
+### 2. Get OpenAI API Key
 
-1. Go to https://aistudio.google.com/app/apikey
-2. Create a free API key
+Go to https://platform.openai.com/api-keys and create an API key.
 
 ### 3. Configure
 
-```bash
-cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
+Create a `.env` file in the project root:
+
+```
+OPENAI_API_KEY=sk-your-key-here
 ```
 
 ### 4. Run
 
 ```bash
-streamlit run app.py
+python -m streamlit run app.py
+```
+
+App opens at **http://localhost:8501**
+
+---
+
+## Project Structure
+
+```
+ShikshAI/
+├── app.py                  # Main Streamlit app
+├── utils/
+│   ├── ai_helper.py        # OpenAI GPT-4o client
+│   ├── stt.py              # Whisper speech-to-text
+│   ├── tts.py              # OpenAI TTS
+│   ├── i18n.py             # Hindi/English UI strings
+│   ├── visuals.py          # Diagram/image generation
+│   ├── topics.py           # Topic suggestions
+│   └── favicon_b64.py      # Favicon for HTML embeds
+├── prompts/
+│   ├── concept.py          # Concept simplification prompts
+│   ├── quiz.py             # Quiz generation prompts
+│   ├── translation.py      # Translation prompts
+│   ├── activity.py         # Activity guide prompts
+│   └── diagram.py          # Diagram prompts
+├── services/
+│   ├── history.py          # SQLite session history
+│   └── pdf_gen.py          # PDF export
+├── requirements.txt
+└── favicon.png
 ```
 
 ---
 
-## Prompt Design
+## Deployment (Streamlit Cloud)
 
-All AI prompts use a consistent system instruction that:
-- Establishes ShikshAI as a Haryana government school teaching assistant
-- Mandates Hinglish (natural Hindi-English mix) responses
-- Grounds examples in Indian rural daily life
-- Returns structured JSON for reliable parsing
-
-Each feature has a dedicated prompt that returns JSON, enabling clean separation between AI output and UI rendering.
-
----
-
-## Localization
-
-- **STT**: faster-whisper auto-detects Hindi/English/Hinglish
-- **TTS**: gTTS supports `hi` (Hindi) and `en` (English) — selectable in sidebar
-- **UI**: All labels in Hinglish for teacher comfort
-- **AI responses**: Always Hinglish unless translation feature specifies otherwise
-
----
-
-## Deployment
-
-### Streamlit Cloud (Recommended)
-1. Push to GitHub
-2. Go to share.streamlit.io
-3. Connect repo, set `GEMINI_API_KEY` in Secrets
+1. Fork/clone this repo to GitHub
+2. Go to [share.streamlit.io](https://share.streamlit.io)
+3. Connect repo → set `OPENAI_API_KEY` in Secrets
 4. Deploy
-
-### Hugging Face Spaces
-1. Create Space (Streamlit SDK)
-2. Upload files
-3. Add `GEMINI_API_KEY` to Space Secrets
