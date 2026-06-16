@@ -10,11 +10,13 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-# Streamlit Cloud secrets support
-if hasattr(st, "secrets"):
+# Streamlit Cloud secrets support (no-op locally if secrets.toml absent)
+try:
     for _k in ["OPENAI_API_KEY", "GEMINI_API_KEY"]:
         if _k in st.secrets and not os.getenv(_k):
             os.environ[_k] = st.secrets[_k]
+except Exception:
+    pass
 
 # ── Page config ────────────────────────────────────────────────────────────────
 _favicon = Image.open(os.path.join(os.path.dirname(__file__), "favicon.png"))
