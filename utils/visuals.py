@@ -109,6 +109,21 @@ def _is_truetype(font) -> bool:
     return isinstance(font, ImageFont.FreeTypeFont)
 
 
+def _has_devanagari(text: str) -> bool:
+    return any(0x0900 <= ord(c) <= 0x097F for c in text)
+
+
+def _draw_content(draw, pos, text: str, fill, size: int, anchor=None):
+    """Smart content renderer: Devanagari font for Hindi, Latin+sci_ascii for English."""
+    text = str(text)
+    if _has_devanagari(text):
+        font = _load_font_deva(size)
+        _draw_text_safe(draw, pos, text, fill, font, anchor)
+    else:
+        font = _load_font(size)
+        _draw_sci(draw, pos, text, fill, font, anchor)
+
+
 # Common Unicode → ASCII substitutions for scientific/math text
 _UNICODE_MAP = str.maketrans({
     "→": "->", "←": "<-", "↑": "^", "↓": "v", "↔": "<->",
@@ -187,7 +202,7 @@ def create_concept_card(data: dict) -> bytes:
     draw.rectangle([0, 86, W, 90], fill=INDIGO)
     title = data.get("title", "Concept")[:55]
     _draw_sci(draw, (60, 45), "ShikshAI", (160, 170, 255), f_label, anchor="lm")
-    _draw_sci(draw, (W // 2, 45), title, WHITE, f_title, anchor="mm")
+    _draw_content(draw, (W // 2, 45), title, WHITE, 50, anchor="mm")
 
     # ── Formula / Key Equation highlight box (centre top) ────────────────────
     formula = data.get("formula") or data.get("key_equation") or ""
@@ -200,7 +215,7 @@ def create_concept_card(data: dict) -> bytes:
 
     if formula:
         _rr(draw, [28, 102, W - 28, 172], 14, (20, 28, 80), AMBER, w=2)
-        _draw_sci(draw, (W // 2, 137), str(formula)[:80], AMBER, f_formula, anchor="mm")
+        _draw_content(draw, (W // 2, 137), str(formula)[:80], AMBER, 42, anchor="mm")
         expl_y = 185
     else:
         expl_y = 102
@@ -208,8 +223,8 @@ def create_concept_card(data: dict) -> bytes:
     # ── Explanation ───────────────────────────────────────────────────────────
     _rr(draw, [28, expl_y, W - 28, expl_y + 195], 14, (18, 24, 60), INDIGO, w=1)
     explanation = data.get("explanation", "")
-    for i, line in enumerate(textwrap.wrap(_sci_ascii(explanation), width=86)[:5]):
-        _draw_sci(draw, (52, expl_y + 16 + i * 34), line, TEXT_PRIMARY, f_body)
+    for i, line in enumerate(textwrap.wrap(explanation, width=86)[:5]):
+        _draw_content(draw, (52, expl_y + 16 + i * 34), line, TEXT_PRIMARY, 28)
 
     mid_y = expl_y + 210
 
@@ -217,15 +232,15 @@ def create_concept_card(data: dict) -> bytes:
     _rr(draw, [28, mid_y, 574, mid_y + 165], 14, (14, 22, 55), EMERALD, w=1)
     _draw_sci(draw, (52, mid_y + 12), "EXAMPLE", EMERALD, f_label)
     draw.line([(52, mid_y + 30), (200, mid_y + 30)], fill=EMERALD, width=1)
-    for i, line in enumerate(textwrap.wrap(_sci_ascii(data.get("example", "")), width=40)[:4]):
-        _draw_sci(draw, (52, mid_y + 40 + i * 30), line, TEXT_PRIMARY, f_small)
+    for i, line in enumerate(textwrap.wrap(data.get("example", ""), width=40)[:4]):
+        _draw_content(draw, (52, mid_y + 40 + i * 30), line, TEXT_PRIMARY, 24)
 
     # ── Fun fact (right panel) ────────────────────────────────────────────────
     _rr(draw, [606, mid_y, W - 28, mid_y + 165], 14, (22, 18, 55), AMBER, w=1)
     _draw_sci(draw, (630, mid_y + 12), "FUN FACT", AMBER, f_label)
     draw.line([(630, mid_y + 30), (790, mid_y + 30)], fill=AMBER, width=1)
-    for i, line in enumerate(textwrap.wrap(_sci_ascii(data.get("fun_fact", "")), width=40)[:4]):
-        _draw_sci(draw, (630, mid_y + 40 + i * 30), line, TEXT_PRIMARY, f_small)
+    for i, line in enumerate(textwrap.wrap(data.get("fun_fact", ""), width=40)[:4]):
+        _draw_content(draw, (630, mid_y + 40 + i * 30), line, TEXT_PRIMARY, 24)
 
     # ── Key points ────────────────────────────────────────────────────────────
     kp_y = mid_y + 180
@@ -235,7 +250,7 @@ def create_concept_card(data: dict) -> bytes:
     for i, pt in enumerate(data.get("key_points", [])[:3]):
         cy = kp_y + 45 + i * 38
         draw.ellipse([52, cy, 70, cy + 18], fill=dot_colors[i % 3])
-        _draw_sci(draw, (82, cy - 1), str(pt)[:85], TEXT_PRIMARY, f_small)
+        _draw_content(draw, (82, cy - 1), str(pt)[:85], TEXT_PRIMARY, 24)
 
     # ── Hindi summary strip ───────────────────────────────────────────────────
     draw.rectangle([0, H - 58, W, H], fill=(20, 26, 68))
@@ -267,8 +282,8 @@ def create_quiz_card(q_data: dict, q_num: int, total: int) -> bytes:
 
     # Question box
     _rr(draw, [28, 80, W - 28, 200], 14, CARD_BG, PURPLE)
-    for i, line in enumerate(textwrap.wrap(_sci_ascii(q_data.get("question", "")), width=80)[:3]):
-        _draw_sci(draw, (52, 96 + i * 36), line, TEXT_PRIMARY, f_md)
+    for i, line in enumerate(textwrap.wrap(q_data.get("question", ""), width=80)[:3]):
+        _draw_content(draw, (52, 96 + i * 36), line, TEXT_PRIMARY, 32)
 
     # Options (2x2 grid)
     opts   = q_data.get("options", {})
@@ -279,8 +294,8 @@ def create_quiz_card(q_data: dict, q_num: int, total: int) -> bytes:
         c = colors.get(key, INDIGO)
         _rr(draw, [x1, y1, x1 + 565, y1 + 115], 12, CARD_BG, c)
         _draw_sci(draw, (x1 + 20, y1 + 16), f"{key})", c, f_lg)
-        for j, line in enumerate(textwrap.wrap(_sci_ascii(str(val)), width=30)[:2]):
-            _draw_sci(draw, (x1 + 72, y1 + 16 + j * 36), line, TEXT_PRIMARY, f_sm)
+        for j, line in enumerate(textwrap.wrap(str(val), width=30)[:2]):
+            _draw_content(draw, (x1 + 72, y1 + 16 + j * 36), line, TEXT_PRIMARY, 28)
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")
