@@ -21,39 +21,34 @@ WHITE         = (255, 255, 255)
 
 
 def _load_font(size: int, index: int = 0) -> ImageFont.FreeTypeFont:
+    import os as _os
+    # Bundled font — committed in assets/fonts/, always present in the repo
+    _here = _os.path.dirname(_os.path.abspath(__file__))
+    _bundled = _os.path.join(_here, "..", "assets", "fonts", "DejaVuSans.ttf")
+
     paths = [
-        # Windows — Nirmala UI supports Devanagari + Latin
+        # 1. Repo-bundled DejaVuSans (guaranteed on every platform)
+        _bundled,
+        # 2. Windows — Nirmala supports Devanagari + Latin
         "C:\\Windows\\Fonts\\Nirmala.ttc",
         "C:\\Windows\\Fonts\\NirmalaUI.ttf",
         "C:\\Windows\\Fonts\\arial.ttf",
-        # Linux — Noto with Devanagari
+        # 3. Linux — Noto with Devanagari (if installed via packages.txt)
         "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",
         "/usr/share/fonts/opentype/noto/NotoSansDevanagari-Regular.otf",
         "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
         "/usr/share/fonts/opentype/noto/NotoSans-Regular.otf",
         "/usr/share/fonts/noto/NotoSans-Regular.ttf",
-        "/usr/share/fonts/noto/NotoSansDevanagari-Regular.ttf",
-        # Linux — DejaVu (fonts-dejavu-core)
+        # 4. Linux — DejaVu system
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/dejavu/DejaVuSans.ttf",
-        # Linux — Liberation
+        # 5. Linux — other system fonts
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
-        # Linux — FreeSans
         "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-        # Generic
-        "NotoSans-Regular.ttf",
-        "DejaVuSans.ttf",
-        "LiberationSans-Regular.ttf",
+        # 6. matplotlib bundled (cross-platform pip fallback)
+        _os.path.join(_os.path.dirname(__import__("matplotlib").__file__),
+                      "mpl-data", "fonts", "ttf", "DejaVuSans.ttf"),
     ]
-    # matplotlib ships DejaVuSans — guaranteed present if matplotlib is installed
-    try:
-        import os, matplotlib
-        _mpl = os.path.join(os.path.dirname(matplotlib.__file__),
-                            "mpl-data", "fonts", "ttf", "DejaVuSans.ttf")
-        paths.append(_mpl)
-    except Exception:
-        pass
     for path in paths:
         try:
             return ImageFont.truetype(path, size, index=index)
