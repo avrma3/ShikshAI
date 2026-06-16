@@ -1,5 +1,2 @@
 fonts-dejavu-core
 fonts-liberation
-fonts-freefont-ttf
-fonts-noto-core
-fonts-noto-extra

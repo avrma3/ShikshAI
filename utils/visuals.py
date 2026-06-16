@@ -21,31 +21,40 @@ WHITE         = (255, 255, 255)
 
 
 def _load_font(size: int, index: int = 0) -> ImageFont.FreeTypeFont:
-    for path in [
+    paths = [
         # Windows — Nirmala UI supports Devanagari + Latin
         "C:\\Windows\\Fonts\\Nirmala.ttc",
         "C:\\Windows\\Fonts\\NirmalaUI.ttf",
         "C:\\Windows\\Fonts\\arial.ttf",
-        # Linux — Noto with Devanagari (fonts-noto-extra / fonts-noto-core)
+        # Linux — Noto with Devanagari
         "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",
         "/usr/share/fonts/opentype/noto/NotoSansDevanagari-Regular.otf",
         "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
         "/usr/share/fonts/opentype/noto/NotoSans-Regular.otf",
         "/usr/share/fonts/noto/NotoSans-Regular.ttf",
         "/usr/share/fonts/noto/NotoSansDevanagari-Regular.ttf",
-        # Linux — DejaVu (fonts-dejavu-core) — reliable Latin/ASCII
+        # Linux — DejaVu (fonts-dejavu-core)
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/dejavu/DejaVuSans.ttf",
-        # Linux — Liberation (fonts-liberation)
+        # Linux — Liberation
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
         "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
-        # Linux — FreeSans (fonts-freefont-ttf)
+        # Linux — FreeSans
         "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-        # Generic relative fallbacks
+        # Generic
         "NotoSans-Regular.ttf",
         "DejaVuSans.ttf",
         "LiberationSans-Regular.ttf",
-    ]:
+    ]
+    # matplotlib ships DejaVuSans — guaranteed present if matplotlib is installed
+    try:
+        import os, matplotlib
+        _mpl = os.path.join(os.path.dirname(matplotlib.__file__),
+                            "mpl-data", "fonts", "ttf", "DejaVuSans.ttf")
+        paths.append(_mpl)
+    except Exception:
+        pass
+    for path in paths:
         try:
             return ImageFont.truetype(path, size, index=index)
         except Exception:
@@ -80,20 +89,17 @@ def _sci_ascii(text: str) -> str:
 
 
 def _draw_text_safe(draw, pos, text: str, fill, font, anchor=None):
-    """Draw text safely with 4 fallback levels."""
-    def _do(t, use_anchor):
-        a = anchor if (anchor and use_anchor) else None
-        if a:
-            draw.text(pos, t, fill=fill, font=font, anchor=a)
-        else:
-            draw.text(pos, t, fill=fill, font=font)
-    for t in [text, _sci_ascii(text)]:
-        for ua in [True, False]:
-            try:
-                _do(t, ua)
-                return
-            except Exception:
-                continue
+    """Draw text safely — handles anchor failure for bitmap/non-TrueType fonts."""
+    for use_anchor in [True, False]:
+        try:
+            a = anchor if (anchor and use_anchor) else None
+            if a:
+                draw.text(pos, text, fill=fill, font=font, anchor=a)
+            else:
+                draw.text(pos, text, fill=fill, font=font)
+            return
+        except Exception:
+            continue
 
 
 def _draw_sci(draw, pos, text: str, fill, font, anchor=None):
