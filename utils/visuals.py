@@ -5,7 +5,32 @@ Emoji characters are avoided in PIL draws to maximise cross-platform compatibili
 """
 from PIL import Image, ImageDraw, ImageFont
 import io
+import os
 import textwrap
+
+# ── Pre-load bundled font bytes at import time ─────────────────────────────────
+# Tries __file__-relative AND cwd-relative paths so it works on every platform.
+def _read_font_file(filename: str) -> bytes | None:
+    candidates = []
+    try:
+        _d = os.path.dirname(os.path.abspath(__file__))
+        candidates.append(os.path.join(_d, "..", "assets", "fonts", filename))
+    except Exception:
+        pass
+    try:
+        candidates.append(os.path.join(os.getcwd(), "assets", "fonts", filename))
+    except Exception:
+        pass
+    for p in candidates:
+        try:
+            with open(os.path.normpath(p), "rb") as f:
+                return f.read()
+        except Exception:
+            continue
+    return None
+
+_NOTO_BYTES  = _read_font_file("NotoSansDevanagari-Regular.ttf")
+_DEJAVU_BYTES = _read_font_file("DejaVuSans.ttf")
 
 # ── Colour palette ────────────────────────────────────────────────────────────
 BG            = (10,  14,  39)
@@ -21,31 +46,63 @@ WHITE         = (255, 255, 255)
 
 
 def _load_font(size: int, index: int = 0) -> ImageFont.FreeTypeFont:
-    import os as _os
-    _here = _os.path.dirname(_os.path.abspath(__file__))
-    _fonts = _os.path.join(_here, "..", "assets", "fonts")
-
-    paths = [
-        # 1. Repo-bundled Noto Devanagari — covers Hindi + Latin (guaranteed in repo)
-        _os.path.join(_fonts, "NotoSansDevanagari-Regular.ttf"),
-        # 2. Repo-bundled DejaVu — Latin fallback (guaranteed in repo)
-        _os.path.join(_fonts, "DejaVuSans.ttf"),
-        # 3. Windows — Nirmala supports Devanagari + Latin
-        "C:\\Windows\\Fonts\\Nirmala.ttc",
-        "C:\\Windows\\Fonts\\NirmalaUI.ttf",
+    """Load Latin/ASCII font — DejaVuSans first (full Latin coverage)."""
+    # 1. Bundled DejaVuSans (Latin, full coverage)
+    if _DEJAVU_BYTES:
+        try:
+            return ImageFont.truetype(io.BytesIO(_DEJAVU_BYTES), size)
+        except Exception:
+            pass
+    # 2. Windows system fonts
+    for path in [
         "C:\\Windows\\Fonts\\arial.ttf",
-        # 4. Linux system Noto (if installed)
-        "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",
-        "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-    ]
-    for path in paths:
+        "C:\\Windows\\Fonts\\Nirmala.ttc",
+    ]:
         try:
             return ImageFont.truetype(path, size, index=index)
         except Exception:
             continue
+    # 3. Linux system fonts
+    for path in [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+    ]:
+        try:
+            return ImageFont.truetype(path, size)
+        except Exception:
+            continue
     return ImageFont.load_default()
+
+
+def _load_font_deva(size: int) -> ImageFont.FreeTypeFont:
+    """Load Devanagari font — NotoSansDevanagari first (Hindi support)."""
+    # 1. Bundled NotoSansDevanagari
+    if _NOTO_BYTES:
+        try:
+            return ImageFont.truetype(io.BytesIO(_NOTO_BYTES), size)
+        except Exception:
+            pass
+    # 2. Windows — Nirmala supports Devanagari
+    for path in [
+        "C:\\Windows\\Fonts\\Nirmala.ttc",
+        "C:\\Windows\\Fonts\\NirmalaUI.ttf",
+    ]:
+        try:
+            return ImageFont.truetype(path, size)
+        except Exception:
+            continue
+    # 3. Linux Noto Devanagari
+    for path in [
+        "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",
+        "/usr/share/fonts/truetype/lohit-devanagari/Lohit-Devanagari.ttf",
+    ]:
+        try:
+            return ImageFont.truetype(path, size)
+        except Exception:
+            continue
+    # 4. Fall back to Latin font (Hindi won't render but at least no crash)
+    return _load_font(size)
 
 
 def _is_truetype(font) -> bool:
@@ -184,7 +241,8 @@ def create_concept_card(data: dict) -> bytes:
     draw.rectangle([0, H - 58, W, H], fill=(20, 26, 68))
     draw.line([(0, H - 58), (W, H - 58)], fill=INDIGO, width=1)
     hindi = data.get("hindi_summary", "")
-    _draw_text_safe(draw, (W // 2, H - 28), str(hindi)[:95], AMBER, f_body, anchor="mm")
+    f_hindi = _load_font_deva(28)
+    _draw_text_safe(draw, (W // 2, H - 28), str(hindi)[:95], AMBER, f_hindi, anchor="mm")
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -237,9 +295,10 @@ def create_translation_card(data: dict) -> bytes:
     _gradient_bg(img, (10, 14, 39), (16, 22, 50))
     draw = ImageDraw.Draw(img)
 
-    f_lg = _load_font(38)
-    f_md = _load_font(30)
-    f_sm = _load_font(24)
+    f_lg   = _load_font(38)
+    f_md   = _load_font(30)
+    f_sm   = _load_font(24)
+    f_deva = _load_font_deva(28)
 
     # Header
     draw.rectangle([0, 0, W, 64], fill=TEAL)
@@ -251,22 +310,27 @@ def create_translation_card(data: dict) -> bytes:
     for i, line in enumerate(textwrap.wrap(_sci_ascii(data.get("original", "")), width=44)[:4]):
         _draw_sci(draw, (40, 116 + i * 38), line, TEXT_PRIMARY, f_md)
 
-    # Translation panel (may contain Devanagari — use _draw_text_safe)
+    # Translation panel — uses Devanagari font for Hindi rendering
     _rr(draw, [624, 76, W - 18, 280], 14, CARD_BG, INDIGO)
     _draw_sci(draw, (644, 86), "[ Translation ]", INDIGO, f_sm)
     for i, line in enumerate(textwrap.wrap(data.get("translation", ""), width=44)[:4]):
-        _draw_text_safe(draw, (644, 116 + i * 38), line, TEXT_PRIMARY, f_md)
+        _draw_text_safe(draw, (644, 116 + i * 38), line, TEXT_PRIMARY, f_deva)
 
-    # Key words strip
+    # Key words strip — render English part with Latin font, Hindi with Devanagari font
     _rr(draw, [18, 292, W - 18, 400], 12, CARD_BG, AMBER)
     _draw_sci(draw, (40, 302), "Key Words:", AMBER, f_sm)
     kws = data.get("key_words", [])[:5]
     for i, kw in enumerate(kws):
+        x = 40 + i * 232
         if isinstance(kw, dict):
-            pair = " -> ".join(str(v) for v in list(kw.values())[:2])
+            vals = list(kw.values())[:2]
+            part1 = str(vals[0])[:10] if vals else ""
+            part2 = str(vals[1])[:10] if len(vals) > 1 else ""
+            _draw_sci(draw, (x, 334), part1, TEXT_PRIMARY, f_sm)
+            _draw_sci(draw, (x + 75, 334), "->", TEXT_SECONDARY, f_sm)
+            _draw_text_safe(draw, (x + 100, 334), part2, TEXT_PRIMARY, f_deva)
         else:
-            pair = str(kw)
-        _draw_text_safe(draw, (40 + i * 232, 334), pair[:22], TEXT_PRIMARY, f_sm)
+            _draw_text_safe(draw, (x, 334), str(kw)[:22], TEXT_PRIMARY, f_deva)
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -862,15 +926,19 @@ def create_body_parts_diagram(grade: str, lang: str = "en") -> bytes:
     f_title = _load_font(26)
     f_label = _load_font(17)
     f_sm    = _load_font(13)
+    # Use Devanagari font when language is Hindi
+    if lang == "hi":
+        f_title = _load_font_deva(26)
+        f_label = _load_font_deva(17)
 
     show_organs = grade not in ("LKG", "UKG", "1", "2", "3", "4", "5")
     bx = 390   # body centre X
 
     # Header
     if lang == "hi":
-        title = "मानव शरीर — आंतरिक अंग" if show_organs else "मानव शरीर के अंग"
+        title = "मानव शरीर -- आंतरिक अंग" if show_organs else "मानव शरीर के अंग"
     else:
-        title = "Human Body — Internal Organs" if show_organs else "Parts of the Human Body"
+        title = "Human Body -- Internal Organs" if show_organs else "Parts of the Human Body"
     draw.rectangle([0, 0, W, 52], fill=(25, 55, 140))
     _draw_text_safe(draw, (W // 2, 26), title, (255, 255, 255), f_title, anchor="mm")
 
