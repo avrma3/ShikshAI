@@ -26,12 +26,17 @@ def _load_font(size: int, index: int = 0) -> ImageFont.FreeTypeFont:
         "C:\\Windows\\Fonts\\Nirmala.ttc",
         "C:\\Windows\\Fonts\\NirmalaUI.ttf",
         "C:\\Windows\\Fonts\\arial.ttf",
-        # Linux (Streamlit Cloud / Ubuntu)
+        # Linux — Noto fonts with Devanagari support (fonts-noto-hinted)
+        "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",
+        "/usr/share/fonts/opentype/noto/NotoSansDevanagari-Regular.otf",
+        "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+        "/usr/share/fonts/opentype/noto/NotoSans-Regular.ttf",
+        # Linux fallbacks (fonts-dejavu-core, fonts-liberation)
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
         "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-        "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
         # Generic fallbacks
+        "NotoSans-Regular.ttf",
         "DejaVuSans.ttf",
         "LiberationSans-Regular.ttf",
     ]:
@@ -40,6 +45,29 @@ def _load_font(size: int, index: int = 0) -> ImageFont.FreeTypeFont:
         except Exception:
             continue
     return ImageFont.load_default()
+
+
+def _is_truetype(font) -> bool:
+    return isinstance(font, ImageFont.FreeTypeFont)
+
+
+def _draw_text_safe(draw, pos, text: str, fill, font, anchor=None):
+    """Draw text; if it contains non-Latin chars and font can't render them,
+    fall back to the ASCII-safe version of the string."""
+    try:
+        if anchor:
+            draw.text(pos, text, fill=fill, font=font, anchor=anchor)
+        else:
+            draw.text(pos, text, fill=fill, font=font)
+    except Exception:
+        safe = "".join(c if ord(c) < 256 else "?" for c in text)
+        try:
+            if anchor:
+                draw.text(pos, safe, fill=fill, font=font, anchor=anchor)
+            else:
+                draw.text(pos, safe, fill=fill, font=font)
+        except Exception:
+            pass
 
 
 def _rr(draw, xy, r, fill, outline=None, w=2):
@@ -135,7 +163,7 @@ def create_concept_card(data: dict) -> bytes:
     draw.rectangle([0, H - 58, W, H], fill=(20, 26, 68))
     draw.line([(0, H - 58), (W, H - 58)], fill=INDIGO, width=1)
     hindi = data.get("hindi_summary", "")
-    draw.text((W // 2, H - 28), str(hindi)[:95], fill=AMBER, font=f_body, anchor="mm")
+    _draw_text_safe(draw, (W // 2, H - 28), str(hindi)[:95], AMBER, f_body, anchor="mm")
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -823,7 +851,7 @@ def create_body_parts_diagram(grade: str, lang: str = "en") -> bytes:
     else:
         title = "Human Body — Internal Organs" if show_organs else "Parts of the Human Body"
     draw.rectangle([0, 0, W, 52], fill=(25, 55, 140))
-    draw.text((W // 2, 26), title, fill=(255, 255, 255), font=f_title, anchor="mm")
+    _draw_text_safe(draw, (W // 2, 26), title, (255, 255, 255), f_title, anchor="mm")
 
     # ── Draw body ─────────────────────────────────────────────────────────────
     # Hair
@@ -884,12 +912,12 @@ def create_body_parts_diagram(grade: str, lang: str = "en") -> bytes:
     def leader_left(bx_pt, by_pt, label_y, text, col=(20, 50, 180)):
         draw.line([(bx_pt, by_pt), (LEFT_X, label_y)], fill=col, width=1)
         draw.ellipse([bx_pt - 4, by_pt - 4, bx_pt + 4, by_pt + 4], fill=col)
-        draw.text((LEFT_X - 4, label_y), text, fill=col, font=f_label, anchor="rm")
+        _draw_text_safe(draw, (LEFT_X - 4, label_y), text, col, f_label, anchor="rm")
 
     def leader_right(bx_pt, by_pt, label_y, text, col=(130, 30, 150)):
         draw.line([(bx_pt, by_pt), (RIGHT_X, label_y)], fill=col, width=1)
         draw.ellipse([bx_pt - 4, by_pt - 4, bx_pt + 4, by_pt + 4], fill=col)
-        draw.text((RIGHT_X + 4, label_y), text, fill=col, font=f_label, anchor="lm")
+        _draw_text_safe(draw, (RIGHT_X + 4, label_y), text, col, f_label, anchor="lm")
 
     L = (20,  50, 180)   # blue  — left-side labels
     R = (130, 30, 150)   # purple — right-side labels
@@ -963,8 +991,8 @@ def create_body_parts_diagram(grade: str, lang: str = "en") -> bytes:
 
     # Footer
     draw.rectangle([0, H - 26, W, H], fill=(25, 55, 140))
-    footer = "ShikshAI | Smart Board Visual" if lang == "en" else "ShikshAI | स्मार्ट बोर्ड विज़ुअल"
-    draw.text((W // 2, H - 13), footer, fill=(200, 220, 255), font=f_sm, anchor="mm")
+    footer = "ShikshAI | Smart Board Visual" if lang == "en" else "ShikshAI | Smart Board Visual (Hindi)"
+    _draw_text_safe(draw, (W // 2, H - 13), footer, (200, 220, 255), f_sm, anchor="mm")
 
     buf = io.BytesIO()
     img.save(buf, "PNG")
