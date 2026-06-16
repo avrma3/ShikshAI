@@ -484,7 +484,7 @@ def _diagram_right_triangle(data: dict) -> bytes:
     # Header
     draw.rectangle([0, 0, W, 56], fill=(28, 36, 100))
     formula = data.get("formula") or "a^2 + b^2 = c^2"
-    _draw_sci(draw, (W // 2, 28), formula, AMBER, f_big, anchor="mm")
+    _draw_content(draw, (W // 2, 28), formula, AMBER, 32, anchor="mm")
 
     # Triangle vertices  (right angle at bottom-left)
     Ax, Ay = 160, 480   # right angle
@@ -551,8 +551,8 @@ def _diagram_circle(data: dict) -> bytes:
     f_big = _load_font(28); f_med = _load_font(22); f_sm = _load_font(17)
 
     draw.rectangle([0, 0, W, 52], fill=(28, 36, 100))
-    _draw_sci(draw, (W // 2, 26), data.get("formula") or "C = 2*pi*r  |  A = pi*r^2",
-              AMBER, f_big, anchor="mm")
+    _draw_content(draw, (W // 2, 26), data.get("formula") or "C = 2*pi*r  |  A = pi*r^2",
+                  AMBER, 28, anchor="mm")
 
     cx, cy, r = 280, 270, 170
     draw.ellipse([cx-r, cy-r, cx+r, cy+r], outline=INDIGO, width=4)
@@ -565,7 +565,7 @@ def _diagram_circle(data: dict) -> bytes:
     _rr(draw, [560, 100, 860, 440], 12, (16, 22, 58), PURPLE)
     _draw_sci(draw, (710, 130), "Key Facts", PURPLE, f_med, anchor="mm")
     for i, pt in enumerate(data.get("key_points", [])[:3]):
-        _draw_sci(draw, (580, 170 + i * 70), f"* {_sci_ascii(str(pt)[:32])}", TEXT_PRIMARY, f_sm)
+        _draw_content(draw, (580, 170 + i * 70), f"* {str(pt)[:32]}", TEXT_PRIMARY, 17)
 
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
@@ -825,7 +825,7 @@ def _diagram_newton(data: dict) -> bytes:
 
     formula = data.get("formula") or "F = ma"
     draw.rectangle([0, 0, W, 55], fill=(28, 36, 100))
-    _draw_sci(draw, (W//2, 27), f"Newton's Laws  |  {_sci_ascii(formula)}", AMBER, f_big, anchor="mm")
+    _draw_content(draw, (W//2, 27), f"Newton's Laws  |  {formula}", AMBER, 28, anchor="mm")
 
     laws = [
         (40,  75, INDIGO,  "1st Law - Inertia",
@@ -866,7 +866,7 @@ def _diagram_flowchart(data: dict) -> bytes:
 
     title = data.get("title", "Concept")
     draw.rectangle([0, 0, W, 56], fill=(28, 36, 100))
-    _draw_sci(draw, (W//2, 28), _sci_ascii(title[:50]), WHITE, f_big, anchor="mm")
+    _draw_content(draw, (W//2, 28), title[:50], WHITE, 26, anchor="mm")
 
     pts = data.get("key_points", [])[:4]
     cols = [INDIGO, EMERALD, AMBER, PURPLE]
@@ -876,8 +876,8 @@ def _diagram_flowchart(data: dict) -> bytes:
         y = start_y + i * (node_h + 20)
         _rr(draw, [(W - node_w)//2, y, (W + node_w)//2, y + node_h],
             12, (16, 22, 60), cols[i % 4])
-        _draw_sci(draw, (W//2, y + node_h//2), str(pt)[:65],
-                  TEXT_PRIMARY, f_med, anchor="mm")
+        _draw_content(draw, (W//2, y + node_h//2), str(pt)[:65],
+                      TEXT_PRIMARY, 20, anchor="mm")
         if i < len(pts) - 1:
             arr_x = W // 2
             draw.line([(arr_x, y + node_h), (arr_x, y + node_h + 20)],
