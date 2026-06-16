@@ -941,18 +941,14 @@ def play_tts(text: str, lang: str = "hi"):
     st.session_state["last_tts_text"] = text
     st.session_state["last_tts_lang"] = lang
     with st.spinner(T["tts_spinner"]):
-        from utils.tts import speak, audio_player_html
+        from utils.tts import speak
         audio_bytes = speak(text, lang=lang)
         if audio_bytes:
-            st.markdown(audio_player_html(audio_bytes, autoplay=True),
-                        unsafe_allow_html=True)
+            st.audio(audio_bytes, format="audio/mp3", autoplay=True)
 
 
 def show_board_image(img_bytes: bytes):
-    from utils.visuals import img_to_display
-    st.markdown(
-        f'<img src="{img_to_display(img_bytes)}" class="board-image" />',
-        unsafe_allow_html=True)
+    st.image(img_bytes, use_container_width=True)
 
 
 def render_mermaid(mermaid_code: str, height: int = 290):
