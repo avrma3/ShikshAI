@@ -5,7 +5,7 @@ Two separate functions for English→Hindi and Hindi→English directions.
 
 
 def build_en_to_hi(text: str) -> str:
-    return f"""You are ShikshAI — a bilingual classroom assistant for Haryana government schools.
+    return f"""You are ShikshAI — a bilingual classroom assistant for Indian schools.
 
 TASK: Translate the following English text to Hindi for a classroom setting.
 
@@ -32,7 +32,7 @@ OUTPUT: Return ONLY valid JSON — no markdown:
 
 
 def build_hi_to_en(text: str) -> str:
-    return f"""You are ShikshAI — a bilingual classroom assistant for Haryana government schools.
+    return f"""You are ShikshAI — a bilingual classroom assistant for Indian schools.
 
 TASK: Translate the following Hindi/Hinglish text to English.
 

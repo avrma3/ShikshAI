@@ -21,11 +21,17 @@ WHITE         = (255, 255, 255)
 
 
 def _load_font(size: int, index: int = 0) -> ImageFont.FreeTypeFont:
-    # Nirmala UI (Windows TTC) supports Devanagari + Latin — try first
     for path in [
+        # Windows — Nirmala UI supports Devanagari + Latin
         "C:\\Windows\\Fonts\\Nirmala.ttc",
         "C:\\Windows\\Fonts\\NirmalaUI.ttf",
-        "arial.ttf", "Arial.ttf",
+        "C:\\Windows\\Fonts\\arial.ttf",
+        # Linux (Streamlit Cloud / Ubuntu)
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+        "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+        # Generic fallbacks
         "DejaVuSans.ttf",
         "LiberationSans-Regular.ttf",
     ]:
@@ -630,10 +636,10 @@ def _diagram_food_chain(data: dict) -> bytes:
         draw.text((x+w//2, y+42), lbl, fill=col,          font=f_med, anchor="mm")
         draw.text((x+w//2, y+70), sub, fill=TEXT_SECONDARY, font=f_sm, anchor="mm")
 
-    # Arrows
-    for ax, ay, bx, by in [(230,255),(430,255),(630,255)]:
-        draw.line([(ax, 255),(bx, 255)], fill=WHITE, width=2)
-        draw.polygon([(bx-8,249),(bx-8,261),(bx+2,255)], fill=WHITE)
+    # Arrows between adjacent level boxes
+    for ax, bx in [(230, 430), (430, 630)]:
+        draw.line([(ax, 255), (bx, 255)], fill=WHITE, width=2)
+        draw.polygon([(bx-8, 249), (bx-8, 261), (bx+2, 255)], fill=WHITE)
 
     draw.text((W//2, H-20), "Energy flows: Sun → Producers → Consumers → Decomposers",
               fill=AMBER, font=f_tiny, anchor="mm")
@@ -759,6 +765,8 @@ def execute_diagram_code(code: str) -> bytes | None:
     if not code or len(code) < 30:
         return None
     import tempfile, subprocess, os, sys
+    script_path = None
+    out_path = None
     try:
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as out_f:
             out_path = out_f.name

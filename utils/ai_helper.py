@@ -7,9 +7,9 @@ import time
 from openai import OpenAI
 
 SYSTEM_PROMPT = (
-    "You are ShikshAI — a bilingual AI teaching assistant for government schools in Haryana, India. "
+    "You are ShikshAI — a bilingual AI teaching assistant for government schools in India. "
     "Always respond with ONLY valid JSON as instructed in each prompt. "
-    "Follow the language instructions in each prompt exactly. Be warm, encouraging, and culturally relevant to rural Haryana students."
+    "Follow the language instructions in each prompt exactly. Be warm, encouraging, and culturally relevant to Indian students."
 )
 
 
@@ -165,7 +165,7 @@ def _chat_system(grade: str, subject: str, lang: str) -> str:
 
     return (
         f"You are ShikshAI — an expert AI teacher for Grade {grade} {subject} students "
-        f"in Haryana government schools, India.\n\n"
+        f"in India.\n\n"
         f"LANGUAGE RULE: {lang_rule}\n\n"
         f"STUDENT LEVEL: Grade {grade} ({level}).\n\n"
         f"FORMATTING (always follow):\n"

@@ -49,7 +49,7 @@ DIFFICULTY: Secondary/Senior (Class {grade}) — NCERT board level.
 * Distractors should be based on common exam mistakes
 * Explanation: 2 sentences with mechanism/reasoning"""
 
-    return f"""You are ShikshAI — an AI quiz generator for Haryana government school classrooms.
+    return f"""You are ShikshAI — an AI quiz generator for Indian school classrooms.
 
 TASK: Generate {num_q} MCQ questions on "{topic}" for Grade {grade} ({subject}).
 

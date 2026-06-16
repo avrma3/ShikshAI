@@ -8,7 +8,8 @@ _client = None
 def _get_client():
     global _client
     if _client is None:
-        _client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        key = os.getenv("OPENAI_API_KEY") or os.getenv("GEMINI_API_KEY")
+        _client = OpenAI(api_key=key)
     return _client
 
 

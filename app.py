@@ -54,6 +54,8 @@ _defaults = {
     "_t1_gpt4o_answer":     "",
     "_t1_stream_concept":   "",
     "mic_key_t6":           0,
+    "_last_grade_subj":     "",
+    "trans_actual_dir":     "en_to_hi",
 }
 for k, v in _defaults.items():
     if k not in st.session_state:
@@ -726,7 +728,7 @@ with st.sidebar:
     grade = st.selectbox(
         T["class_grade"],
         ["LKG", "UKG", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
-        index=7,  # default: Class 6
+        index=7,  # default: Class 8
     )
 
     # Grade-aware subject selection — keeps every dropdown ≤ 6 items (always opens downward)
@@ -832,7 +834,7 @@ border-radius:12px;padding:14px 16px;">
     if st.button(T["reset_session"], key="reset_btn"):
         for k, v in _defaults.items():
             st.session_state[k] = v
-        st.toast("Session reset! 🔄", icon="✅")
+        st.toast(T.get("reset_toast", "Session reset! 🔄"), icon="✅")
         st.rerun()
 
 
@@ -1265,7 +1267,7 @@ with tab2:
                 if not st.session_state.quiz_saved:
                     save_to_history("quiz", st.session_state.quiz_topic_name, score_pct=float(pct))
                     st.session_state.quiz_saved = True
-                    st.toast(f"Quiz saved! Score: {pct}% 🎯", icon="✅")
+                    st.toast(T.get("quiz_saved_toast", "Quiz saved!") + f" Score: {pct}% 🎯", icon="✅")
                     play_tts(
                         T["t2_tts_done"].format(
                             pct=pct,
@@ -1378,6 +1380,7 @@ with tab3:
                     from utils.ai_helper import translate_content
                     result = translate_content(model, source_text, actual_dir)
                     st.session_state["trans_result"] = result
+                    st.session_state["trans_actual_dir"] = actual_dir
                     save_to_history("translation", source_text[:60], result)
 
     with col_t2:
@@ -1399,7 +1402,8 @@ with tab3:
                     f'{T["t3_pron"]} {result["transliteration"]}</div>',
                     unsafe_allow_html=True)
 
-            out_lang = "en" if dir_code == "hi_to_en" else "hi"
+            _actual_dir = st.session_state.get("trans_actual_dir", dir_code)
+            out_lang = "en" if _actual_dir == "hi_to_en" else "hi"
             play_tts(result.get("speak_text", result.get("translation","")), lang=out_lang)
 
             kws = result.get("key_words", [])
@@ -1448,7 +1452,7 @@ with tab4:
                     st.session_state.activity_data = act_data
                     save_to_history("activity", activity_text[:60], act_data)
                     intro = act_data.get("speak_intro","")
-                    if intro:
+                    if intro and not intro.startswith("AI error"):
                         play_tts(intro, lang=tts_lang)
 
         st.markdown("---")
@@ -1744,7 +1748,7 @@ with tab5:
         st.markdown(T["t5_recent"])
         sessions = get_recent(25)
         if sessions:
-            icon_map = {"concept":"🧠","quiz":"❓","translation":"🌐","activity":"⏱️"}
+            icon_map = {"concept":"🧠","quiz":"❓","translation":"🌐","activity":"⏱️","ask_ai":"💬"}
             df = pd.DataFrame([{
                 T["t5_col_time"]:    r["ts"],
                 T["t5_col_feature"]: icon_map.get(r["feature"],"📌") + " " + r["feature"].capitalize(),

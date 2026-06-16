@@ -28,6 +28,8 @@ Hindi, English or Hinglish — all accepted!""",
             "<b style='color:#c7d2fe;'>Connecting Dreams Foundation</b>"
         ),
         "reset_session":    "🗑️ Reset Session",
+        "reset_toast":      "Session reset! 🔄",
+        "quiz_saved_toast": "Quiz saved!",
 
         # ── Header ────────────────────────────────────────────────────────────
         "header_title":     "ShikshAI",
@@ -271,6 +273,8 @@ Group activity on fractions
             "<b style='color:#c7d2fe;'>Connecting Dreams Foundation</b>"
         ),
         "reset_session":    "🗑️ सत्र रीसेट करें",
+        "reset_toast":      "सत्र रीसेट हो गया! 🔄",
+        "quiz_saved_toast": "Quiz सुरक्षित!",
 
         # ── Header ────────────────────────────────────────────────────────────
         "header_title":     "ShikshAI",
