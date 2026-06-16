@@ -22,32 +22,23 @@ WHITE         = (255, 255, 255)
 
 def _load_font(size: int, index: int = 0) -> ImageFont.FreeTypeFont:
     import os as _os
-    # Bundled font — committed in assets/fonts/, always present in the repo
     _here = _os.path.dirname(_os.path.abspath(__file__))
-    _bundled = _os.path.join(_here, "..", "assets", "fonts", "DejaVuSans.ttf")
+    _fonts = _os.path.join(_here, "..", "assets", "fonts")
 
     paths = [
-        # 1. Repo-bundled DejaVuSans (guaranteed on every platform)
-        _bundled,
-        # 2. Windows — Nirmala supports Devanagari + Latin
+        # 1. Repo-bundled Noto Devanagari — covers Hindi + Latin (guaranteed in repo)
+        _os.path.join(_fonts, "NotoSansDevanagari-Regular.ttf"),
+        # 2. Repo-bundled DejaVu — Latin fallback (guaranteed in repo)
+        _os.path.join(_fonts, "DejaVuSans.ttf"),
+        # 3. Windows — Nirmala supports Devanagari + Latin
         "C:\\Windows\\Fonts\\Nirmala.ttc",
         "C:\\Windows\\Fonts\\NirmalaUI.ttf",
         "C:\\Windows\\Fonts\\arial.ttf",
-        # 3. Linux — Noto with Devanagari (if installed via packages.txt)
+        # 4. Linux system Noto (if installed)
         "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",
-        "/usr/share/fonts/opentype/noto/NotoSansDevanagari-Regular.otf",
         "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
-        "/usr/share/fonts/opentype/noto/NotoSans-Regular.otf",
-        "/usr/share/fonts/noto/NotoSans-Regular.ttf",
-        # 4. Linux — DejaVu system
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/dejavu/DejaVuSans.ttf",
-        # 5. Linux — other system fonts
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-        # 6. matplotlib bundled (cross-platform pip fallback)
-        _os.path.join(_os.path.dirname(__import__("matplotlib").__file__),
-                      "mpl-data", "fonts", "ttf", "DejaVuSans.ttf"),
     ]
     for path in paths:
         try:
