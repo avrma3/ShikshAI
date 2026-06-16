@@ -26,16 +26,22 @@ def _load_font(size: int, index: int = 0) -> ImageFont.FreeTypeFont:
         "C:\\Windows\\Fonts\\Nirmala.ttc",
         "C:\\Windows\\Fonts\\NirmalaUI.ttf",
         "C:\\Windows\\Fonts\\arial.ttf",
-        # Linux — Noto fonts with Devanagari support (fonts-noto-hinted)
+        # Linux — Noto with Devanagari (fonts-noto-extra / fonts-noto-core)
         "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",
         "/usr/share/fonts/opentype/noto/NotoSansDevanagari-Regular.otf",
         "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
-        "/usr/share/fonts/opentype/noto/NotoSans-Regular.ttf",
-        # Linux fallbacks (fonts-dejavu-core, fonts-liberation)
+        "/usr/share/fonts/opentype/noto/NotoSans-Regular.otf",
+        "/usr/share/fonts/noto/NotoSans-Regular.ttf",
+        "/usr/share/fonts/noto/NotoSansDevanagari-Regular.ttf",
+        # Linux — DejaVu (fonts-dejavu-core) — reliable Latin/ASCII
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+        # Linux — Liberation (fonts-liberation)
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
+        # Linux — FreeSans (fonts-freefont-ttf)
         "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-        # Generic fallbacks
+        # Generic relative fallbacks
         "NotoSans-Regular.ttf",
         "DejaVuSans.ttf",
         "LiberationSans-Regular.ttf",
@@ -74,19 +80,20 @@ def _sci_ascii(text: str) -> str:
 
 
 def _draw_text_safe(draw, pos, text: str, fill, font, anchor=None):
-    """Draw text safely — tries as-is, then ASCII-converted fallback."""
-    def _do(t):
-        if anchor:
-            draw.text(pos, t, fill=fill, font=font, anchor=anchor)
+    """Draw text safely with 4 fallback levels."""
+    def _do(t, use_anchor):
+        a = anchor if (anchor and use_anchor) else None
+        if a:
+            draw.text(pos, t, fill=fill, font=font, anchor=a)
         else:
             draw.text(pos, t, fill=fill, font=font)
-    try:
-        _do(text)
-    except Exception:
-        try:
-            _do(_sci_ascii(text))
-        except Exception:
-            pass
+    for t in [text, _sci_ascii(text)]:
+        for ua in [True, False]:
+            try:
+                _do(t, ua)
+                return
+            except Exception:
+                continue
 
 
 def _draw_sci(draw, pos, text: str, fill, font, anchor=None):

@@ -2,4 +2,4 @@ fonts-dejavu-core
 fonts-liberation
 fonts-freefont-ttf
 fonts-noto-core
-fonts-noto-hinted
+fonts-noto-extra
