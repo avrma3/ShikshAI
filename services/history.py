@@ -33,8 +33,48 @@ def init_db() -> None:
             data_json  TEXT,
             score_pct  REAL
         )""")
+        db.execute("""
+        CREATE TABLE IF NOT EXISTS quiz_asked (
+            id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            ts       TEXT NOT NULL,
+            topic    TEXT NOT NULL,
+            grade    TEXT NOT NULL,
+            subject  TEXT NOT NULL,
+            lang     TEXT NOT NULL,
+            question TEXT NOT NULL
+        )""")
+        db.execute("""
+        CREATE INDEX IF NOT EXISTS idx_quiz_asked
+        ON quiz_asked(topic, grade, subject, lang)
+        """)
         db.commit()
     _db_ready = True
+
+
+def get_asked_questions(topic: str, grade: str, subject: str, lang: str, limit: int = 80) -> list:
+    """Return previously asked question texts for this topic+grade+subject+lang."""
+    init_db()
+    with _conn() as db:
+        rows = db.execute(
+            "SELECT question FROM quiz_asked "
+            "WHERE topic=? AND grade=? AND subject=? AND lang=? "
+            "ORDER BY ts DESC LIMIT ?",
+            (topic.strip().lower(), grade, subject, lang, limit),
+        ).fetchall()
+    return [r[0] for r in rows]
+
+
+def save_asked_questions(topic: str, grade: str, subject: str, lang: str, questions: list) -> None:
+    """Persist newly generated question texts so they won't repeat in future."""
+    init_db()
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    t  = topic.strip().lower()
+    with _conn() as db:
+        db.executemany(
+            "INSERT INTO quiz_asked (ts, topic, grade, subject, lang, question) VALUES (?,?,?,?,?,?)",
+            [(ts, t, grade, subject, lang, q) for q in questions if q],
+        )
+        db.commit()
 
 
 def save(feature: str, topic: str = "", grade: str = "", subject: str = "",

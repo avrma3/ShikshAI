@@ -1303,17 +1303,15 @@ with tab2:
             else:
                 with st.spinner(T["t2_spinner"]):
                     from utils.ai_helper import generate_quiz
-                    # Retrieve already-asked questions for this topic+grade+subject combo
-                    _qkey   = f"{topic_val.strip().lower()}|{grade}|{subject}|{_lang}"
-                    _prev   = st.session_state.get("_quiz_asked_qs", {}).get(_qkey, [])
+                    from services.history import get_asked_questions, save_asked_questions
+                    # Load previously asked questions from DB (permanent, survives refresh)
+                    _prev     = get_asked_questions(topic_val, grade, subject, _lang)
                     questions = generate_quiz(model, topic_val, num_q, grade, subject,
                                               lang=_lang, exclude_questions=_prev)
                     if questions:
-                        # Track these questions so they won't repeat next time
+                        # Persist new questions to DB so they never repeat
                         _new_texts = [q.get("question", "") for q in questions if q.get("question")]
-                        _asked_map = st.session_state.get("_quiz_asked_qs", {})
-                        _asked_map[_qkey] = (_prev + _new_texts)[-60:]  # keep last 60
-                        st.session_state["_quiz_asked_qs"] = _asked_map
+                        save_asked_questions(topic_val, grade, subject, _lang, _new_texts)
 
                         st.session_state.quiz_questions  = questions
                         st.session_state.quiz_index      = 0
