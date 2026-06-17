@@ -833,9 +833,9 @@ def _cached_activity_card(data_json: str) -> bytes:
     return create_activity_card(_json.loads(data_json))
 
 @st.cache_data(show_spinner=False)
-def _cached_concept_diagram(data_json: str) -> bytes:
+def _cached_concept_diagram(data_json: str, lang: str = "en") -> bytes:
     from utils.visuals import create_concept_diagram
-    return create_concept_diagram(_json.loads(data_json))
+    return create_concept_diagram(_json.loads(data_json), lang)
 
 @st.cache_data(show_spinner=False)
 def _cached_body_parts(grade: str, lang: str) -> bytes:
@@ -1218,7 +1218,7 @@ with tab1:
                     except Exception:
                         _diag = None
                     if not _diag:
-                        _diag = _cached_concept_diagram(_json.dumps(data, ensure_ascii=False, sort_keys=True)) if data else None
+                        _diag = _cached_concept_diagram(_json.dumps(data, ensure_ascii=False, sort_keys=True), _lang) if data else None
                 st.session_state["_diagram_img"] = _diag
 
             # Streaming explanation last

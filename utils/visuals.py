@@ -529,6 +529,148 @@ def create_activity_card(data: dict) -> bytes:
     return buf.getvalue()
 
 
+# ── Diagram label translations ────────────────────────────────────────────────
+
+_DIAG_LABELS = {
+    "en": {
+        # Right Triangle
+        "LEGEND": "LEGEND", "Perpendicular": "Perpendicular", "Base": "Base",
+        "Hypotenuse": "Hypotenuse", "Formula": "Formula", "(Pythagoras)": "(Pythagoras)",
+        # Circle
+        "r (radius)": "r (radius)", "d (diameter)": "d (diameter)", "Key Facts": "Key Facts",
+        # Photosynthesis
+        "Photosynthesis": "Photosynthesis",
+        "Sunlight": "Sunlight", "Water (H2O)": "Water (H2O)", "CO2": "CO2",
+        "Chlorophyll": "Chlorophyll", "Glucose": "Glucose", "Oxygen O2": "Oxygen O2",
+        "Energy source": "Energy source", "From roots": "From roots", "From air": "From air",
+        "Green pigment": "Green pigment", "Food / energy": "Food / energy", "Released out": "Released out",
+        "photo_eq": "6CO2 + 6H2O + light  ->  C6H12O6 + 6O2",
+        # Water Cycle
+        "Water Cycle": "Water Cycle", "Ocean/River": "Ocean/River",
+        "Evaporation": "Evaporation", "Condensation": "Condensation",
+        "Clouds": "Clouds", "Precipitation": "Precipitation",
+        # Heart
+        "Human Heart -- Anatomy": "Human Heart -- Anatomy",
+        "Right": "Right", "Left": "Left", "Atrium": "Atrium", "Ventricle": "Ventricle",
+        "Septum": "Septum", "Aorta": "Aorta",
+        "Pulmonary Vein": "Pulmonary Vein", "Pulmonary Artery": "Pulmonary Artery",
+        "Superior Vena Cava": "Superior Vena Cava", "Inferior Vena Cava": "Inferior Vena Cava",
+        "Aorta (to body)": "Aorta (to body)",
+        "deoxy_blood": "Deoxygenated blood (body->heart->lungs)",
+        "oxy_blood":   "Oxygenated blood (lungs->heart->body)",
+        "Heart Facts": "Heart Facts",
+        "heart_beats": "~72 beats/min | 5L blood/min",
+        "heart_size":  "Size of your fist | Beats 2.5B times",
+        # Food Chain
+        "Food Chain": "Food Chain", "Sun": "Sun",
+        "Producers": "Producers", "Herbivores": "Herbivores",
+        "Carnivores": "Carnivores", "Decomposers": "Decomposers",
+        "Energy Source": "Energy Source", "Plants / Grass": "Plants / Grass",
+        "Rabbit / Deer": "Rabbit / Deer", "Fox / Lion": "Fox / Lion",
+        "Fungi / Bacteria": "Fungi / Bacteria",
+        "food_flow": "Energy flows: Sun->Producers->Consumers->Decomposers",
+        # Cell
+        "Animal Cell Structure": "Animal Cell Structure",
+        "Nucleus": "Nucleus", "(DNA here)": "(DNA here)",
+        "Mitochondria": "Mitochondria", "Mito\nchondria": "Mito\nchondria",
+        "ORGANELLES": "ORGANELLES", "Cell Membrane": "Cell Membrane",
+        "ctrl_enter": "Controls what enters/exits",
+        "brain_dna":  "Brain of the cell, has DNA",
+        "powerhouse": "Powerhouse, makes energy",
+        "cytoplasm":  "Cytoplasm", "cytoplasm_desc": "Jelly-like fluid inside",
+        # Newton
+        "Newton's Laws": "Newton's Laws",
+        "1st_title": "1st Law - Inertia",
+        "1st_l1": "Object stays at rest or in motion",
+        "1st_l2": "unless an external force acts on it.",
+        "2nd_title": "2nd Law - F = ma",
+        "2nd_l1": "Force = Mass x Acceleration",
+        "2nd_l2": "More force = more acceleration.",
+        "3rd_title": "3rd Law - Action-Reaction",
+        "3rd_l1": "Every action has an equal and",
+        "3rd_l2": "opposite reaction.",
+        "Force (Newton, N)": "Force (Newton, N)",
+        "Mass (kg)": "Mass (kg)",
+        "Acceleration (m/s^2)": "Acceleration (m/s^2)",
+        # Shared
+        "footer": "ShikshAI  |  Smart Board Visual",
+    },
+    "hi": {
+        # Right Triangle
+        "LEGEND": "विवरण", "Perpendicular": "लम्ब", "Base": "आधार",
+        "Hypotenuse": "कर्ण", "Formula": "सूत्र", "(Pythagoras)": "(पाइथागोरस)",
+        # Circle
+        "r (radius)": "r (त्रिज्या)", "d (diameter)": "d (व्यास)", "Key Facts": "मुख्य तथ्य",
+        # Photosynthesis
+        "Photosynthesis": "प्रकाश संश्लेषण",
+        "Sunlight": "सूर्य प्रकाश", "Water (H2O)": "पानी (H2O)", "CO2": "CO2",
+        "Chlorophyll": "क्लोरोफिल", "Glucose": "ग्लूकोज", "Oxygen O2": "ऑक्सीजन O2",
+        "Energy source": "ऊर्जा स्रोत", "From roots": "जड़ों से", "From air": "हवा से",
+        "Green pigment": "हरा वर्णक", "Food / energy": "भोजन/ऊर्जा", "Released out": "बाहर निकलती",
+        "photo_eq": "6CO2 + 6H2O + प्रकाश  ->  C6H12O6 + 6O2",
+        # Water Cycle
+        "Water Cycle": "जल चक्र", "Ocean/River": "समुद्र/नदी",
+        "Evaporation": "वाष्पीकरण", "Condensation": "संघनन",
+        "Clouds": "बादल", "Precipitation": "वर्षा",
+        # Heart
+        "Human Heart -- Anatomy": "मानव हृदय -- शरीर रचना",
+        "Right": "दायाँ", "Left": "बायाँ", "Atrium": "अलिंद", "Ventricle": "निलय",
+        "Septum": "पट", "Aorta": "महाधमनी",
+        "Pulmonary Vein": "फुफ्फुस शिरा", "Pulmonary Artery": "फुफ्फुस धमनी",
+        "Superior Vena Cava": "उच्च महाशिरा", "Inferior Vena Cava": "निम्न महाशिरा",
+        "Aorta (to body)": "महाधमनी (शरीर को)",
+        "deoxy_blood": "अशुद्ध रक्त (शरीर->हृदय->फेफड़े)",
+        "oxy_blood":   "शुद्ध रक्त (फेफड़े->हृदय->शरीर)",
+        "Heart Facts": "हृदय तथ्य",
+        "heart_beats": "~72 धड़कन/मिनट | 5L रक्त/मिनट",
+        "heart_size":  "मुट्ठी के बराबर | 2.5 अरब बार धड़कता है",
+        # Food Chain
+        "Food Chain": "खाद्य श्रृंखला", "Sun": "सूर्य",
+        "Producers": "उत्पादक", "Herbivores": "शाकाहारी",
+        "Carnivores": "मांसाहारी", "Decomposers": "अपघटक",
+        "Energy Source": "ऊर्जा स्रोत", "Plants / Grass": "पौधे/घास",
+        "Rabbit / Deer": "खरगोश/हिरण", "Fox / Lion": "लोमड़ी/शेर",
+        "Fungi / Bacteria": "कवक/जीवाणु",
+        "food_flow": "ऊर्जा: सूर्य->उत्पादक->उपभोक्ता->अपघटक",
+        # Cell
+        "Animal Cell Structure": "जंतु कोशिका संरचना",
+        "Nucleus": "केंद्रक", "(DNA here)": "(DNA यहाँ)",
+        "Mitochondria": "माइटोकॉन्ड्रिया", "Mito\nchondria": "माइटो\nकॉन्ड्रिया",
+        "ORGANELLES": "कोशिकांग", "Cell Membrane": "कोशिका झिल्ली",
+        "ctrl_enter": "क्या प्रवेश/निकास नियंत्रित",
+        "brain_dna":  "कोशिका मस्तिष्क, DNA युक्त",
+        "powerhouse": "शक्तिगृह, ऊर्जा बनाता है",
+        "cytoplasm":  "कोशिकाद्रव्य", "cytoplasm_desc": "जेली जैसा तरल पदार्थ",
+        # Newton
+        "Newton's Laws": "न्यूटन के नियम",
+        "1st_title": "प्रथम नियम - जड़त्व",
+        "1st_l1": "वस्तु विराम या गति में रहती है",
+        "1st_l2": "जब तक बाह्य बल न लगे।",
+        "2nd_title": "द्वितीय नियम - F = ma",
+        "2nd_l1": "बल = द्रव्यमान x त्वरण",
+        "2nd_l2": "अधिक बल = अधिक त्वरण।",
+        "3rd_title": "तृतीय नियम - क्रिया-प्रतिक्रिया",
+        "3rd_l1": "प्रत्येक क्रिया की समान व",
+        "3rd_l2": "विपरीत प्रतिक्रिया होती है।",
+        "Force (Newton, N)": "बल (न्यूटन, N)",
+        "Mass (kg)": "द्रव्यमान (kg)",
+        "Acceleration (m/s^2)": "त्वरण (m/s^2)",
+        # Shared
+        "footer": "ShikshAI  |  स्मार्ट बोर्ड विज़ुअल",
+    },
+}
+
+
+def _L(key: str, lang: str) -> str:
+    """Get translated diagram label. Falls back to English if key missing."""
+    return _DIAG_LABELS.get(lang, _DIAG_LABELS["en"]).get(key, _DIAG_LABELS["en"].get(key, key))
+
+
+def _draw_lbl(draw, pos, key: str, fill, size: int, lang: str, anchor=None):
+    """Draw a translated diagram label using the correct script font."""
+    _draw_content(draw, pos, _L(key, lang), fill, size, anchor)
+
+
 # ── Concept Diagram (PIL-based, replaces Mermaid for visual accuracy) ─────────
 
 def _detect_diagram_type(data: dict) -> str:
@@ -538,54 +680,62 @@ def _detect_diagram_type(data: dict) -> str:
     text    = title + formula + mermaid
 
     if any(k in text for k in ["pythagoras", "right triangle", "hypotenuse",
-                                "a² + b²", "a^2 + b^2"]):
+                                "a² + b²", "a^2 + b^2",
+                                "पाइथागोरस", "समकोण त्रिभुज", "कर्ण"]):
         return "right_triangle"
     if any(k in text for k in ["circle", "circumference", "diameter", "radius",
-                                "pi r", "2pi", "πr"]):
+                                "pi r", "2pi", "πr",
+                                "वृत्त", "त्रिज्या", "व्यास", "परिधि"]):
         return "circle"
     if any(k in text for k in ["photosynthesis", "sunlight", "chlorophyll",
-                                "glucose", "co2", "carbon dioxide"]):
+                                "glucose", "co2", "carbon dioxide",
+                                "प्रकाश संश्लेषण", "क्लोरोफिल", "ग्लूकोज"]):
         return "photosynthesis"
     if any(k in text for k in ["water cycle", "evaporation", "condensation",
-                                "precipitation", "hydrological"]):
+                                "precipitation", "hydrological",
+                                "जल चक्र", "वाष्पीकरण", "संघनन", "वर्षा"]):
         return "water_cycle"
     if any(k in text for k in ["heart", "cardiac", "atrium", "ventricle",
-                                "heartbeat", "blood pump", "circulatory"]):
+                                "heartbeat", "blood pump", "circulatory",
+                                "हृदय", "अलिंद", "निलय", "रक्त"]):
         return "heart"
     if any(k in text for k in ["food chain", "food web", "producer", "consumer",
-                                "herbivore", "carnivore", "decomposer"]):
+                                "herbivore", "carnivore", "decomposer",
+                                "खाद्य श्रृंखला", "उत्पादक", "शाकाहारी", "मांसाहारी"]):
         return "food_chain"
     if any(k in text for k in ["cell", "nucleus", "mitochondria", "membrane",
-                                "cytoplasm", "organelle"]):
+                                "cytoplasm", "organelle",
+                                "कोशिका", "केंद्रक", "माइटोकॉन्ड्रिया", "कोशिकांग"]):
         return "cell"
     if any(k in text for k in ["newton", "force", "motion", "acceleration",
-                                "f = ma", "friction", "gravity", "inertia"]):
+                                "f = ma", "friction", "gravity", "inertia",
+                                "न्यूटन", "बल", "त्वरण", "जड़त्व", "गुरुत्व"]):
         return "newton"
     return "flowchart"
 
 
-def create_concept_diagram(data: dict) -> bytes:
+def create_concept_diagram(data: dict, lang: str = "en") -> bytes:
     dtype = _detect_diagram_type(data)
     if dtype == "right_triangle":
-        return _diagram_right_triangle(data)
+        return _diagram_right_triangle(data, lang)
     if dtype == "circle":
-        return _diagram_circle(data)
+        return _diagram_circle(data, lang)
     if dtype == "photosynthesis":
-        return _diagram_photosynthesis(data)
+        return _diagram_photosynthesis(data, lang)
     if dtype == "water_cycle":
-        return _diagram_water_cycle(data)
+        return _diagram_water_cycle(data, lang)
     if dtype == "heart":
-        return _diagram_heart(data)
+        return _diagram_heart(data, lang)
     if dtype == "food_chain":
-        return _diagram_food_chain(data)
+        return _diagram_food_chain(data, lang)
     if dtype == "cell":
-        return _diagram_cell(data)
+        return _diagram_cell(data, lang)
     if dtype == "newton":
-        return _diagram_newton(data)
-    return _diagram_flowchart(data)
+        return _diagram_newton(data, lang)
+    return _diagram_flowchart(data, lang)
 
 
-def _diagram_right_triangle(data: dict) -> bytes:
+def _diagram_right_triangle(data: dict, lang: str = "en") -> bytes:
     W, H = 900, 580
     img  = Image.new("RGB", (W, H), (8, 12, 35))
     draw = ImageDraw.Draw(img)
@@ -636,29 +786,28 @@ def _diagram_right_triangle(data: dict) -> bytes:
 
     # Legend box
     _rr(draw, [640, 120, 875, 330], 12, (16, 22, 58), PURPLE)
-    _draw_sci(draw, (757, 140), "LEGEND", PURPLE, f_sm, anchor="mm")
+    _draw_lbl(draw, (757, 140), "LEGEND", PURPLE, 18, lang, anchor="mm")
     items = [("a", EMERALD, "Perpendicular"), ("b", INDIGO, "Base"),
              ("c", AMBER, "Hypotenuse")]
     for i, (lbl, col, name) in enumerate(items):
         y = 168 + i * 52
         draw.ellipse([660, y, 690, y + 30], fill=col)
         _draw_sci(draw, (676, y + 15), lbl, WHITE, f_sm, anchor="mm")
-        _draw_sci(draw, (705, y + 15), name, TEXT_PRIMARY, f_sm, anchor="lm")
+        _draw_lbl(draw, (705, y + 15), name, TEXT_PRIMARY, 17, lang, anchor="lm")
 
     # Formula box bottom
     _rr(draw, [640, 350, 875, 480], 12, (20, 28, 80), AMBER)
-    _draw_sci(draw, (757, 375), "Formula", AMBER, f_tiny, anchor="mm")
+    _draw_lbl(draw, (757, 375), "Formula", AMBER, 15, lang, anchor="mm")
     _draw_sci(draw, (757, 415), "a^2 + b^2 = c^2", WHITE, f_med, anchor="mm")
-    _draw_sci(draw, (757, 455), "(Pythagoras)", TEXT_SECONDARY, f_tiny, anchor="mm")
+    _draw_lbl(draw, (757, 455), "(Pythagoras)", TEXT_SECONDARY, 15, lang, anchor="mm")
 
     # Footer
-    _draw_sci(draw, (W // 2, H - 16), "ShikshAI  |  Smart Board Visual",
-              (60, 70, 130), f_tiny, anchor="mm")
+    _draw_lbl(draw, (W // 2, H - 16), "footer", (60, 70, 130), 15, lang, anchor="mm")
 
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
 
-def _diagram_circle(data: dict) -> bytes:
+def _diagram_circle(data: dict, lang: str = "en") -> bytes:
     W, H = 900, 500
     img  = Image.new("RGB", (W, H), (8, 12, 35))
     draw = ImageDraw.Draw(img)
@@ -673,38 +822,38 @@ def _diagram_circle(data: dict) -> bytes:
     draw.line([(cx, cy), (cx + r, cy)], fill=EMERALD, width=3)
     draw.line([(cx - r, cy), (cx + r, cy)], fill=AMBER, width=2)
     draw.ellipse([cx-6, cy-6, cx+6, cy+6], fill=WHITE)
-    _draw_sci(draw, (cx + r // 2, cy - 20), "r (radius)", EMERALD, f_sm)
-    _draw_sci(draw, (cx - 10, cy - 20), "d (diameter)", AMBER, f_sm)
+    _draw_lbl(draw, (cx + r // 2, cy - 20), "r (radius)", EMERALD, 17, lang)
+    _draw_lbl(draw, (cx - 10, cy - 20), "d (diameter)", AMBER, 17, lang)
 
     _rr(draw, [560, 100, 860, 440], 12, (16, 22, 58), PURPLE)
-    _draw_sci(draw, (710, 130), "Key Facts", PURPLE, f_med, anchor="mm")
+    _draw_lbl(draw, (710, 130), "Key Facts", PURPLE, 22, lang, anchor="mm")
     for i, pt in enumerate(data.get("key_points", [])[:3]):
         _draw_content(draw, (580, 170 + i * 70), f"* {str(pt)[:32]}", TEXT_PRIMARY, 17)
 
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
 
-def _diagram_photosynthesis(data: dict) -> bytes:
+def _diagram_photosynthesis(data: dict, lang: str = "en") -> bytes:
     W, H = 900, 520
     img  = Image.new("RGB", (W, H), (8, 12, 35))
     draw = ImageDraw.Draw(img)
     f_big = _load_font(26); f_med = _load_font(20); f_sm = _load_font(16)
 
     draw.rectangle([0, 0, W, 52], fill=(16, 80, 40))
-    _draw_sci(draw, (W // 2, 26), "Photosynthesis", WHITE, f_big, anchor="mm")
+    _draw_lbl(draw, (W // 2, 26), "Photosynthesis", WHITE, 26, lang, anchor="mm")
 
     boxes = [
-        (60,  100, "Sunlight",   AMBER,   "Energy source"),
-        (60,  220, "Water (H2O)",TEAL,    "From roots"),
-        (60,  340, "CO2",        INDIGO,  "From air"),
-        (380, 220, "Chlorophyll",EMERALD, "Green pigment"),
-        (680, 130, "Glucose",    AMBER,   "Food / energy"),
-        (680, 310, "Oxygen O2",  TEAL,    "Released out"),
+        (60,  100, "Sunlight",    AMBER,   "Energy source"),
+        (60,  220, "Water (H2O)", TEAL,    "From roots"),
+        (60,  340, "CO2",         INDIGO,  "From air"),
+        (380, 220, "Chlorophyll", EMERALD, "Green pigment"),
+        (680, 130, "Glucose",     AMBER,   "Food / energy"),
+        (680, 310, "Oxygen O2",   TEAL,    "Released out"),
     ]
     for x, y, lbl, col, sub in boxes:
         _rr(draw, [x, y, x+240, y+68], 10, (16, 24, 55), col)
-        _draw_sci(draw, (x+120, y+22), lbl, col,           f_med, anchor="mm")
-        _draw_sci(draw, (x+120, y+50), sub, TEXT_SECONDARY, f_sm, anchor="mm")
+        _draw_lbl(draw, (x+120, y+22), lbl, col,           20, lang, anchor="mm")
+        _draw_lbl(draw, (x+120, y+50), sub, TEXT_SECONDARY, 16, lang, anchor="mm")
 
     # Arrows: inputs -> chlorophyll -> outputs
     for sx, sy in [(180,168),(180,288),(180,408)]:
@@ -712,31 +861,30 @@ def _diagram_photosynthesis(data: dict) -> bytes:
     draw.line([(620, 254), (680, 164)], fill=AMBER, width=2)
     draw.line([(620, 254), (680, 344)], fill=TEAL,  width=2)
 
-    _draw_sci(draw, (W//2, H-16), "6CO2 + 6H2O + light  ->  C6H12O6 + 6O2",
-              AMBER, f_sm, anchor="mm")
+    _draw_lbl(draw, (W//2, H-16), "photo_eq", AMBER, 16, lang, anchor="mm")
 
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
 
-def _diagram_water_cycle(data: dict) -> bytes:
+def _diagram_water_cycle(data: dict, lang: str = "en") -> bytes:
     W, H = 900, 500
     img  = Image.new("RGB", (W, H), (6, 10, 30))
     draw = ImageDraw.Draw(img)
     f_big = _load_font(26); f_med = _load_font(20); f_sm = _load_font(15)
 
     draw.rectangle([0, 0, W, 52], fill=(10, 60, 100))
-    _draw_sci(draw, (W//2, 26), "Water Cycle", WHITE, f_big, anchor="mm")
+    _draw_lbl(draw, (W//2, 26), "Water Cycle", WHITE, 26, lang, anchor="mm")
 
     stages = [
-        (120, 380, "Ocean/River", TEAL),
-        (120, 200, "Evaporation", AMBER),
+        (120, 380, "Ocean/River",  TEAL),
+        (120, 200, "Evaporation",  AMBER),
         (380, 100, "Condensation", INDIGO),
-        (640, 100, "Clouds",      PURPLE),
+        (640, 100, "Clouds",       PURPLE),
         (750, 300, "Precipitation",TEAL),
     ]
     for x, y, lbl, col in stages:
         _rr(draw, [x-10, y-20, x+160, y+40], 10, (14, 20, 55), col)
-        _draw_sci(draw, (x+75, y+10), lbl, col, f_med, anchor="mm")
+        _draw_lbl(draw, (x+75, y+10), lbl, col, 20, lang, anchor="mm")
 
     arrows = [(230,360,130,240),(230,180,380,120),(530,110,640,110),
               (780,120,800,280),(720,340,280,390)]
@@ -746,7 +894,7 @@ def _diagram_water_cycle(data: dict) -> bytes:
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
 
-def _diagram_heart(data: dict) -> bytes:
+def _diagram_heart(data: dict, lang: str = "en") -> bytes:
     W, H = 1000, 640
     img  = Image.new("RGB", (W, H), (245, 245, 250))
     draw = ImageDraw.Draw(img)
@@ -764,7 +912,7 @@ def _diagram_heart(data: dict) -> bytes:
 
     # Header
     draw.rectangle([0, 0, W, 48], fill=(60, 10, 10))
-    _draw_sci(draw, (W//2, 24), "Human Heart -- Anatomy", (255,220,220), f_big, anchor="mm")
+    _draw_lbl(draw, (W//2, 24), "Human Heart -- Anatomy", (255,220,220), 26, lang, anchor="mm")
 
     # ── Heart body (approximate shape using overlapping ellipses) ─────────────
     hx, hy = 420, 360   # heart centre
@@ -779,25 +927,25 @@ def _diagram_heart(data: dict) -> bytes:
     # ── Internal chambers ─────────────────────────────────────────────────────
     # Right Atrium (viewer's left top) — blue (deoxygenated)
     draw.ellipse([hx-175, hy-175, hx-30, hy-30], fill=LIGHT_BLUE, outline=BLUE, width=2)
-    _draw_sci(draw, (hx-102, hy-112), "Right",   BLUE, f_sm, anchor="mm")
-    _draw_sci(draw, (hx-102, hy-96),  "Atrium",  BLUE, f_sm, anchor="mm")
+    _draw_lbl(draw, (hx-102, hy-112), "Right",   BLUE, 14, lang, anchor="mm")
+    _draw_lbl(draw, (hx-102, hy-96),  "Atrium",  BLUE, 14, lang, anchor="mm")
 
     # Left Atrium (viewer's right top) — red (oxygenated)
     draw.ellipse([hx+20, hy-175, hx+155, hy-30], fill=LIGHT_RED, outline=RED, width=2)
-    _draw_sci(draw, (hx+87, hy-112), "Left",   RED, f_sm, anchor="mm")
-    _draw_sci(draw, (hx+87, hy-96),  "Atrium", RED, f_sm, anchor="mm")
+    _draw_lbl(draw, (hx+87, hy-112), "Left",   RED, 14, lang, anchor="mm")
+    _draw_lbl(draw, (hx+87, hy-96),  "Atrium", RED, 14, lang, anchor="mm")
 
     # Right Ventricle (viewer's left bottom) — blue
     draw.polygon([(hx-175, hy-35), (hx-10, hy-35), (hx-55, hy+175), (hx-185, hy+80)],
                  fill=LIGHT_BLUE, outline=BLUE, width=2)
-    _draw_sci(draw, (hx-105, hy+60),  "Right",     BLUE, f_sm, anchor="mm")
-    _draw_sci(draw, (hx-105, hy+76),  "Ventricle", BLUE, f_sm, anchor="mm")
+    _draw_lbl(draw, (hx-105, hy+60),  "Right",     BLUE, 14, lang, anchor="mm")
+    _draw_lbl(draw, (hx-105, hy+76),  "Ventricle", BLUE, 14, lang, anchor="mm")
 
     # Left Ventricle (viewer's right bottom) — red, thick wall
     draw.polygon([(hx+10, hy-35), (hx+155, hy-35), (hx+100, hy+100), (hx-50, hy+175)],
                  fill=LIGHT_RED, outline=RED, width=3)
-    _draw_sci(draw, (hx+80, hy+45),  "Left",      RED, f_sm, anchor="mm")
-    _draw_sci(draw, (hx+80, hy+61),  "Ventricle", RED, f_sm, anchor="mm")
+    _draw_lbl(draw, (hx+80, hy+45),  "Left",      RED, 14, lang, anchor="mm")
+    _draw_lbl(draw, (hx+80, hy+61),  "Ventricle", RED, 14, lang, anchor="mm")
 
     # Septum line
     draw.line([(hx-10, hy-175), (hx-30, hy+170)], fill=OUTLINE, width=3)
@@ -823,115 +971,114 @@ def _diagram_heart(data: dict) -> bytes:
         _draw_sci(draw, (x2 + (6 if right else -6), y2), txt, col, f_sm, anchor=anchor)
 
     # Right labels
-    label_line(hx+155, hy-225, 610, hy-260, "Aorta",            RED)
-    label_line(hx+100, hy-225, 610, hy-220, "Pulmonary Vein",   RED)
-    label_line(hx+155, hy-80,  610, hy-180, "Left Atrium",      RED)
-    label_line(hx+155, hy+30,  610, hy-140, "Left Ventricle",   RED)
+    label_line(hx+155, hy-225, 610, hy-260, _L("Aorta",           lang), RED)
+    label_line(hx+100, hy-225, 610, hy-220, _L("Pulmonary Vein",  lang), RED)
+    label_line(hx+155, hy-80,  610, hy-180, _L("Left",  lang) + " " + _L("Atrium",    lang), RED)
+    label_line(hx+155, hy+30,  610, hy-140, _L("Left",  lang) + " " + _L("Ventricle", lang), RED)
 
     # Left labels
-    label_line(hx-135, hy-225, 220, hy-260, "Superior Vena Cava", BLUE, right=False)
-    label_line(hx-40,  hy-225, 220, hy-220, "Pulmonary Artery",   BLUE, right=False)
-    label_line(hx-175, hy-100, 220, hy-180, "Right Atrium",        BLUE, right=False)
-    label_line(hx-175, hy+30,  220, hy-140, "Right Ventricle",     BLUE, right=False)
-    label_line(hx-165, hy+225, 220, hy-100, "Inferior Vena Cava",  BLUE, right=False)
-    label_line(hx-10,  hy+230, 610, hy-100, "Aorta (to body)",    RED)
+    label_line(hx-135, hy-225, 220, hy-260, _L("Superior Vena Cava", lang), BLUE, right=False)
+    label_line(hx-40,  hy-225, 220, hy-220, _L("Pulmonary Artery",   lang), BLUE, right=False)
+    label_line(hx-175, hy-100, 220, hy-180, _L("Right", lang) + " " + _L("Atrium",    lang), BLUE, right=False)
+    label_line(hx-175, hy+30,  220, hy-140, _L("Right", lang) + " " + _L("Ventricle", lang), BLUE, right=False)
+    label_line(hx-165, hy+225, 220, hy-100, _L("Inferior Vena Cava",  lang), BLUE, right=False)
+    label_line(hx-10,  hy+230, 610, hy-100, _L("Aorta (to body)",     lang), RED)
 
     # Septum label
-    _draw_sci(draw, (hx+10, hy-10), "Septum", OUTLINE, f_tiny, anchor="lm")
+    _draw_lbl(draw, (hx+10, hy-10), "Septum", OUTLINE, 12, lang, anchor="lm")
 
     # ── Legend ─────────────────────────────────────────────────────────────────
     lx, ly = 20, 540
     draw.rectangle([lx, ly, lx+460, ly+80], fill=(230,230,240), outline=OUTLINE, width=1)
     draw.rectangle([lx+10, ly+14, lx+36, ly+34], fill=LIGHT_BLUE, outline=BLUE, width=1)
-    _draw_sci(draw, (lx+44, ly+24), "Deoxygenated blood (from body -> heart -> lungs)", BLUE, f_tiny, anchor="lm")
+    _draw_lbl(draw, (lx+44, ly+24), "deoxy_blood", BLUE, 12, lang, anchor="lm")
     draw.rectangle([lx+10, ly+44, lx+36, ly+64], fill=LIGHT_RED, outline=RED, width=1)
-    _draw_sci(draw, (lx+44, ly+54), "Oxygenated blood (from lungs -> heart -> body)",  RED, f_tiny, anchor="lm")
+    _draw_lbl(draw, (lx+44, ly+54), "oxy_blood",   RED,  12, lang, anchor="lm")
 
     # Fun fact strip
     draw.rectangle([500, 540, W-10, 620], fill=(230,230,240), outline=OUTLINE, width=1)
-    _draw_sci(draw, (750, 560), "Heart Facts", DARK, f_sm, anchor="mm")
-    _draw_sci(draw, (750, 580), "~72 beats/min | 5L blood/min", RED, f_tiny, anchor="mm")
-    _draw_sci(draw, (750, 598), "Size of your fist | Beats 2.5B times in lifetime", DARK, f_tiny, anchor="mm")
+    _draw_lbl(draw, (750, 560), "Heart Facts",  DARK, 14, lang, anchor="mm")
+    _draw_lbl(draw, (750, 580), "heart_beats",  RED,  12, lang, anchor="mm")
+    _draw_lbl(draw, (750, 598), "heart_size",   DARK, 12, lang, anchor="mm")
 
     # Remove reference image
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
 
-def _diagram_food_chain(data: dict) -> bytes:
+def _diagram_food_chain(data: dict, lang: str = "en") -> bytes:
     W, H = 900, 500
     img  = Image.new("RGB", (W, H), (6, 14, 30))
     draw = ImageDraw.Draw(img)
     f_big = _load_font(26); f_med = _load_font(20); f_sm = _load_font(16); f_tiny = _load_font(13)
 
     draw.rectangle([0, 0, W, 52], fill=(10, 60, 20))
-    _draw_sci(draw, (W//2, 26), "Food Chain", WHITE, f_big, anchor="mm")
+    _draw_lbl(draw, (W//2, 26), "Food Chain", WHITE, 26, lang, anchor="mm")
 
     levels = [
-        (70,  200, 160, "Sun",          AMBER,   "Energy Source"),
-        (230, 160, 200, "Producers",    EMERALD, "Plants / Grass"),
-        (430, 160, 200, "Herbivores",   TEAL,    "Rabbit / Deer"),
+        (70,  200, 160, "Sun",          AMBER,       "Energy Source"),
+        (230, 160, 200, "Producers",    EMERALD,     "Plants / Grass"),
+        (430, 160, 200, "Herbivores",   TEAL,        "Rabbit / Deer"),
         (630, 160, 200, "Carnivores",   (220,80,80), "Fox / Lion"),
-        (730, 320, 160, "Decomposers",  PURPLE,  "Fungi / Bacteria"),
+        (730, 320, 160, "Decomposers",  PURPLE,      "Fungi / Bacteria"),
     ]
     for x, y, w, lbl, col, sub in levels:
         _rr(draw, [x, y, x+w, y+110], 12, (14,22,50), col, w=2)
-        _draw_sci(draw, (x+w//2, y+42), lbl, col,           f_med, anchor="mm")
-        _draw_sci(draw, (x+w//2, y+70), sub, TEXT_SECONDARY, f_sm, anchor="mm")
+        _draw_lbl(draw, (x+w//2, y+42), lbl, col,           20, lang, anchor="mm")
+        _draw_lbl(draw, (x+w//2, y+70), sub, TEXT_SECONDARY, 16, lang, anchor="mm")
 
     # Arrows between adjacent level boxes
     for ax, bx in [(230, 430), (430, 630)]:
         draw.line([(ax, 255), (bx, 255)], fill=WHITE, width=2)
         draw.polygon([(bx-8, 249), (bx-8, 261), (bx+2, 255)], fill=WHITE)
 
-    _draw_sci(draw, (W//2, H-20), "Energy flows: Sun -> Producers -> Consumers -> Decomposers",
-              AMBER, f_tiny, anchor="mm")
+    _draw_lbl(draw, (W//2, H-20), "food_flow", AMBER, 13, lang, anchor="mm")
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
 
-def _diagram_cell(data: dict) -> bytes:
+def _diagram_cell(data: dict, lang: str = "en") -> bytes:
     W, H = 900, 520
     img  = Image.new("RGB", (W, H), (8, 12, 35))
     draw = ImageDraw.Draw(img)
     f_big = _load_font(24); f_med = _load_font(18); f_sm = _load_font(14); f_tiny = _load_font(12)
 
     draw.rectangle([0, 0, W, 50], fill=(20, 30, 80))
-    _draw_sci(draw, (W//2, 25), "Animal Cell Structure", WHITE, f_big, anchor="mm")
+    _draw_lbl(draw, (W//2, 25), "Animal Cell Structure", WHITE, 24, lang, anchor="mm")
 
     cx, cy = 300, 290
     # Cell membrane (outer)
     draw.ellipse([cx-210, cy-185, cx+210, cy+185], outline=EMERALD, width=3)
-    _draw_sci(draw, (cx, cy-200), "Cell Membrane", EMERALD, f_sm, anchor="mm")
+    _draw_lbl(draw, (cx, cy-200), "Cell Membrane", EMERALD, 14, lang, anchor="mm")
     # Cytoplasm fill
     draw.ellipse([cx-205, cy-180, cx+205, cy+180], fill=(14, 20, 55))
     draw.ellipse([cx-210, cy-185, cx+210, cy+185], outline=EMERALD, width=3)
     # Nucleus
     draw.ellipse([cx-70, cy-60, cx+70, cy+60], fill=(30, 20, 70), outline=PURPLE, width=3)
-    _draw_sci(draw, (cx, cy), "Nucleus", PURPLE, f_med, anchor="mm")
-    _draw_sci(draw, (cx, cy+22), "(DNA here)", (180,150,230), f_sm, anchor="mm")
+    _draw_lbl(draw, (cx, cy),     "Nucleus",    PURPLE,       18, lang, anchor="mm")
+    _draw_lbl(draw, (cx, cy+22),  "(DNA here)", (180,150,230),14, lang, anchor="mm")
     # Mitochondria
     draw.ellipse([cx+90, cy-40, cx+170, cy], fill=(40,20,10), outline=AMBER, width=2)
-    _draw_sci(draw, (cx+130, cy-20), "Mito-\nchondria", AMBER, f_sm, anchor="mm")
+    _draw_lbl(draw, (cx+130, cy-20), "Mitochondria", AMBER, 12, lang, anchor="mm")
 
     # Labels on right
     lx = 560
     _rr(draw, [lx, 60, lx+310, 460], 12, (14,20,54), INDIGO)
-    _draw_sci(draw, (lx+155, 85), "ORGANELLES", INDIGO, f_med, anchor="mm")
+    _draw_lbl(draw, (lx+155, 85), "ORGANELLES", INDIGO, 18, lang, anchor="mm")
     items = [
-        ("Cell Membrane", EMERALD, "Controls what enters/exits"),
-        ("Nucleus",       PURPLE,  "Brain of the cell, has DNA"),
-        ("Mitochondria",  AMBER,   "Powerhouse, makes energy"),
-        ("Cytoplasm",     TEAL,    "Jelly-like fluid inside"),
+        ("Cell Membrane", EMERALD, "ctrl_enter"),
+        ("Nucleus",       PURPLE,  "brain_dna"),
+        ("Mitochondria",  AMBER,   "powerhouse"),
+        ("cytoplasm",     TEAL,    "cytoplasm_desc"),
     ]
-    for i, (name, col, desc) in enumerate(items):
+    for i, (name_key, col, desc_key) in enumerate(items):
         y = 115 + i * 82
         draw.ellipse([lx+18, y, lx+34, y+16], fill=col)
-        _draw_sci(draw, (lx+45, y+8), name, col, f_sm, anchor="lm")
-        _draw_sci(draw, (lx+45, y+26), desc, TEXT_SECONDARY, f_sm, anchor="lm")
+        _draw_lbl(draw, (lx+45, y+8),  name_key, col,           14, lang, anchor="lm")
+        _draw_lbl(draw, (lx+45, y+26), desc_key, TEXT_SECONDARY, 12, lang, anchor="lm")
 
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
 
-def _diagram_newton(data: dict) -> bytes:
+def _diagram_newton(data: dict, lang: str = "en") -> bytes:
     W, H = 900, 500
     img  = Image.new("RGB", (W, H), (8, 12, 35))
     draw = ImageDraw.Draw(img)
@@ -939,21 +1086,18 @@ def _diagram_newton(data: dict) -> bytes:
 
     formula = data.get("formula") or "F = ma"
     draw.rectangle([0, 0, W, 55], fill=(28, 36, 100))
-    _draw_content(draw, (W//2, 27), f"Newton's Laws  |  {formula}", AMBER, 28, anchor="mm")
+    _draw_content(draw, (W//2, 27), _L("Newton's Laws", lang) + f"  |  {formula}", AMBER, 28, anchor="mm")
 
     laws = [
-        (40,  75, INDIGO,  "1st Law - Inertia",
-         "Object stays at rest or in motion", "unless an external force acts on it."),
-        (40, 220, EMERALD, "2nd Law - F = ma",
-         "Force = Mass x Acceleration", "More force = more acceleration."),
-        (40, 365, AMBER,   "3rd Law - Action-Reaction",
-         "Every action has an equal and", "opposite reaction."),
+        (40,  75, INDIGO,  "1st_title", "1st_l1", "1st_l2"),
+        (40, 220, EMERALD, "2nd_title", "2nd_l1", "2nd_l2"),
+        (40, 365, AMBER,   "3rd_title", "3rd_l1", "3rd_l2"),
     ]
-    for x, y, col, title, l1, l2 in laws:
+    for x, y, col, tk, l1k, l2k in laws:
         _rr(draw, [x, y, x+520, y+120], 14, (16,22,58), col, w=2)
-        _draw_sci(draw, (x+20, y+22), title, col,          f_med)
-        _draw_sci(draw, (x+20, y+58), l1,   TEXT_PRIMARY,  f_sm)
-        _draw_sci(draw, (x+20, y+82), l2,   TEXT_SECONDARY, f_sm)
+        _draw_lbl(draw, (x+20, y+22), tk,  col,           21, lang)
+        _draw_lbl(draw, (x+20, y+58), l1k, TEXT_PRIMARY,  16, lang)
+        _draw_lbl(draw, (x+20, y+82), l2k, TEXT_SECONDARY, 16, lang)
 
     # Formula visual
     _rr(draw, [600, 75, 870, 480], 14, (16,22,58), AMBER, w=2)
@@ -962,16 +1106,16 @@ def _diagram_newton(data: dict) -> bytes:
     pairs = [("F", "Force (Newton, N)", AMBER),
              ("m", "Mass (kg)",         EMERALD),
              ("a", "Acceleration (m/s^2)", INDIGO)]
-    for i, (sym, desc, col) in enumerate(pairs):
+    for i, (sym, desc_key, col) in enumerate(pairs):
         y = 148 + i * 80
         draw.ellipse([625, y, 665, y+40], fill=col)
         _draw_sci(draw, (645, y+20), sym, WHITE, f_med, anchor="mm")
-        _draw_sci(draw, (675, y+20), desc, TEXT_PRIMARY, f_sm, anchor="lm")
+        _draw_lbl(draw, (675, y+20), desc_key, TEXT_PRIMARY, 16, lang, anchor="lm")
 
     buf = io.BytesIO(); img.save(buf, "PNG"); return buf.getvalue()
 
 
-def _diagram_flowchart(data: dict) -> bytes:
+def _diagram_flowchart(data: dict, lang: str = "en") -> bytes:
     """Generic PIL flowchart — fallback for non-specific concepts."""
     W, H = 900, 500
     img  = Image.new("RGB", (W, H), (8, 12, 35))
