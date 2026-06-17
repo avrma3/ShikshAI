@@ -271,7 +271,7 @@ def create_concept_card(data: dict) -> bytes:
     is_hindi   = _has_devanagari(
         data.get("title", "") + data.get("explanation", "")
     )
-    wrap_expl  = 48 if is_hindi else 54
+    wrap_expl  = 48 if is_hindi else 44
     wrap_panel = 22 if is_hindi else 26
     wrap_kp    = 46 if is_hindi else 54
 
