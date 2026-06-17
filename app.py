@@ -291,6 +291,23 @@ div[data-testid="stVerticalBlock"] > div:has(> .stButton) button:active {{
   box-shadow: 0 1px 4px rgba(79,70,229,0.3);
 }}
 
+/* ── Primary pill buttons (Speak / key actions) ──────────────────────────── */
+button[kind="primary"],
+[data-testid="baseButton-primary"] {{
+  border-radius: 50px !important;
+  width: auto !important;
+  padding: 8px 22px !important;
+  font-size: 0.875rem !important;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+  box-shadow: 0 2px 12px rgba(79,70,229,0.4) !important;
+}}
+button[kind="primary"]:hover,
+[data-testid="baseButton-primary"]:hover {{
+  background: linear-gradient(135deg, #4338ca, #6d28d9) !important;
+  box-shadow: 0 4px 18px rgba(79,70,229,0.55) !important;
+  transform: translateY(-1px) !important;
+}}
+
 /* ── Form inputs ─────────────────────────────────────────────────────────── */
 .stTextInput input, .stTextArea textarea, .stNumberInput input {{
   background: {_INPUT} !important;
@@ -1124,6 +1141,16 @@ def play_tts(text: str, lang: str = "hi"):
 
 
 def show_board_image(img_bytes: bytes):
+    from PIL import Image as _PILImage
+    import io as _io
+    _im = _PILImage.open(_io.BytesIO(img_bytes))
+    max_w = 860
+    if _im.width > max_w:
+        ratio = max_w / _im.width
+        _im = _im.resize((max_w, int(_im.height * ratio)), _PILImage.LANCZOS)
+        _buf = _io.BytesIO()
+        _im.save(_buf, format="PNG")
+        img_bytes = _buf.getvalue()
     st.image(img_bytes, use_container_width=True)
 
 
@@ -1180,12 +1207,13 @@ def _copy_btn(text: str, label: str = "📋 Copy", height: int = 44):
   }})
 " class="action-pill">{label}</button>
 <style>
-  .action-pill{{display:inline-flex;align-items:center;gap:5px;
-    background:rgba(99,102,241,0.12);color:#818cf8;
-    border:1px solid rgba(99,102,241,0.35);border-radius:50px;
-    padding:5px 14px;font-size:0.8rem;font-weight:600;
-    cursor:pointer;transition:all 0.18s;font-family:Inter,sans-serif;}}
-  .action-pill:hover{{background:rgba(99,102,241,0.28);}}
+  .action-pill{{display:inline-flex;align-items:center;gap:6px;
+    background:#1e1e3a;color:#e2e8f0;
+    border:1px solid rgba(255,255,255,0.18);border-radius:50px;
+    padding:8px 18px;font-size:0.82rem;font-weight:600;
+    cursor:pointer;transition:all 0.18s;font-family:Inter,sans-serif;
+    white-space:nowrap;}}
+  .action-pill:hover{{background:#2d2d50;border-color:rgba(255,255,255,0.3);}}
 </style>
 """, height=height)
 
@@ -1352,7 +1380,7 @@ with tab1:
                     with _cb1:
                         _copy_btn(_ans_text, "📋 Copy")
                     with _cb2:
-                        if st.button("🔊 Speak", key="t1_speak_ans"):
+                        if st.button("🔊 Speak", key="t1_speak_ans", type="primary"):
                             play_tts(_ans_text[:600], lang=tts_lang)
         else:
             _empty_state("🧠", T["t1_empty_title"], T["t1_empty_sub"])
@@ -1742,7 +1770,7 @@ var iv=setInterval(function(){{
   {T['t4_note']} {act['teacher_note']}
 </div>""", unsafe_allow_html=True)
 
-            if st.button(T["t4_speak"], key="speak_guide"):
+            if st.button(T["t4_speak"], key="speak_guide", type="primary"):
                 steps_text = " ".join(
                     f"Step {s.get('step','')}: {s.get('instruction','')}" for s in steps[:4])
                 play_tts(f"{act.get('speak_intro','')} {steps_text}"[:500], lang=tts_lang)
