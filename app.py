@@ -101,6 +101,10 @@ st.markdown(f"""
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
 }}
+html, body {{
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}}
 
 /* ── Keyframes ───────────────────────────────────────────────────────────── */
 @keyframes fadeIn    {{ from {{ opacity:0 }}               to {{ opacity:1 }} }}
@@ -545,17 +549,26 @@ div[data-testid="stVerticalBlock"] > div:has(> .stButton) button:active {{
   border: 1px solid {_BORDER};
   animation: fadeIn 0.4s ease;
 }}
-[data-testid="stImage"] {{
+[data-testid="stImage"],
+[data-testid="stImage"] > div {{
   max-width: 100% !important;
+  width: 100% !important;
   overflow: hidden !important;
 }}
 [data-testid="stImage"] img {{
   max-width: 100% !important;
   width: 100% !important;
   height: auto !important;
+  display: block !important;
 }}
 .block-container {{
   max-width: 100% !important;
+  overflow-x: hidden !important;
+}}
+section.main, .main, .stMain {{
+  overflow-x: hidden !important;
+}}
+.stApp {{
   overflow-x: hidden !important;
 }}
 

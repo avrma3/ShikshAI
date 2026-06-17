@@ -251,6 +251,13 @@ def _rr(draw, xy, r, fill, outline=None, w=2):
     draw.rounded_rectangle(xy, radius=r, fill=fill, outline=outline, width=w)
 
 
+def _shrink(img: Image.Image, max_w: int = 900) -> Image.Image:
+    if img.width <= max_w:
+        return img
+    ratio = max_w / img.width
+    return img.resize((max_w, int(img.height * ratio)), Image.LANCZOS)
+
+
 def _gradient_bg(img: Image.Image, top: tuple, bot: tuple):
     """Fill image with a vertical gradient."""
     draw  = ImageDraw.Draw(img)
@@ -373,6 +380,7 @@ def create_concept_card(data: dict) -> bytes:
     hindi = str(data.get("hindi_summary", ""))[:100]
     _draw_content(draw, (W//2, H-38), hindi, AMBER, 36, anchor="mm")
 
+    img = _shrink(img)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()
@@ -411,6 +419,7 @@ def create_quiz_card(q_data: dict, q_num: int, total: int) -> bytes:
         for j, line in enumerate(textwrap.wrap(str(val), width=30)[:2]):
             _draw_content(draw, (x1 + 72, y1 + 16 + j * 36), line, TEXT_PRIMARY, 28)
 
+    img = _shrink(img)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()
@@ -461,6 +470,7 @@ def create_translation_card(data: dict) -> bytes:
         else:
             _draw_text_safe(draw, (x, 334), str(kw)[:22], TEXT_PRIMARY, f_deva)
 
+    img = _shrink(img)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()
@@ -524,6 +534,7 @@ def create_activity_card(data: dict) -> bytes:
               f"Group: {group}   --   Materials: {mats}",
               TEXT_SECONDARY, f_sm, anchor="mm")
 
+    img = _shrink(img)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()
