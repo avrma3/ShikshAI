@@ -545,6 +545,19 @@ div[data-testid="stVerticalBlock"] > div:has(> .stButton) button:active {{
   border: 1px solid {_BORDER};
   animation: fadeIn 0.4s ease;
 }}
+[data-testid="stImage"] {{
+  max-width: 100% !important;
+  overflow: hidden !important;
+}}
+[data-testid="stImage"] img {{
+  max-width: 100% !important;
+  width: 100% !important;
+  height: auto !important;
+}}
+.block-container {{
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}}
 
 /* ── Score box ───────────────────────────────────────────────────────────── */
 .score-box {{ animation: scoreReveal 0.6s cubic-bezier(0.34,1.56,0.64,1) both; }}
