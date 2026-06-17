@@ -589,6 +589,8 @@ hr {{
 #MainMenu, footer, header {{ visibility: hidden; }}
 [data-testid="stToolbar"]      {{ display: none !important; }}
 [data-testid="stDeployButton"] {{ display: none !important; }}
+[data-testid="manage-app-button"], .stAppDeployButton {{ display: none !important; }}
+iframe[title="manage-app"] {{ display: none !important; }}
 
 /* ── Dropdowns open downward ─────────────────────────────────────────────── */
 ul[role="listbox"] {{ max-height: 220px !important; overflow-y: auto !important; }}
