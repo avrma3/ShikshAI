@@ -25,8 +25,9 @@ def _detect_ext(data: bytes) -> str:
     return ".wav"
 
 
-def transcribe_audio(audio_bytes: bytes) -> tuple:
-    """Transcribe audio bytes using OpenAI Whisper API. Returns (text, detected_language)."""
+def transcribe_audio(audio_bytes: bytes, language: str = None) -> tuple:
+    """Transcribe audio bytes using OpenAI Whisper API. Returns (text, detected_language).
+    Pass language='hi' or 'en' to prevent wrong language detection."""
     if not audio_bytes:
         return "Koi audio nahi mila.", "unknown"
     try:
@@ -37,13 +38,12 @@ def transcribe_audio(audio_bytes: bytes) -> tuple:
             path = f.name
         try:
             with open(path, "rb") as audio_file:
-                result = client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file,
-                    response_format="verbose_json",
-                )
+                create_kwargs = {"model": "whisper-1", "file": audio_file, "response_format": "verbose_json"}
+                if language:
+                    create_kwargs["language"] = language
+                result = client.audio.transcriptions.create(**create_kwargs)
             text = (result.text or "").strip()
-            lang = getattr(result, "language", "hi")
+            lang = getattr(result, "language", language or "hi")
         finally:
             try:
                 os.unlink(path)

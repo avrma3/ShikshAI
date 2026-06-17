@@ -1013,7 +1013,7 @@ def record_and_transcribe(label: str, auto_clear: bool = False,
     if audio:
         with st.spinner("🔄 Transcribing…"):
             from utils.stt import transcribe_audio
-            text, lang = transcribe_audio(audio.read())
+            text, lang = transcribe_audio(audio.read(), language=_lang)
         if text and not text.startswith("Transcription error"):
             st.markdown(
                 f'<span class="badge badge-done">{T["transcribed"]} ({lang})</span>',
