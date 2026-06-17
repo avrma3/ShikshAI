@@ -603,6 +603,9 @@ button[data-testid*="deploy"]    {{ display: none !important; }}
 button[data-testid*="manage"]    {{ display: none !important; }}
 [class*="deployButton"]          {{ display: none !important; }}
 [class*="manageApp"]             {{ display: none !important; }}
+[data-testid="stChatMessageActionBar"] {{ display: none !important; }}
+[data-testid*="ActionButton"]    {{ display: none !important; }}
+.stChatMessageActionBar          {{ display: none !important; }}
 
 /* Overlay covers bottom-right corner where "Manage app" button sits */
 body::after {{
