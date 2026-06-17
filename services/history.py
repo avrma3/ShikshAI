@@ -147,4 +147,5 @@ def clear_all() -> None:
     init_db()
     with _conn() as db:
         db.execute("DELETE FROM sessions")
+        db.execute("DELETE FROM quiz_asked")
         db.commit()

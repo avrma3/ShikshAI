@@ -396,7 +396,7 @@ def create_quiz_card(q_data: dict, q_num: int, total: int) -> bytes:
 
     # Question box
     _rr(draw, [28, 80, W - 28, 200], 14, CARD_BG, PURPLE)
-    for i, line in enumerate(textwrap.wrap(q_data.get("question", ""), width=80)[:3]):
+    for i, line in enumerate(textwrap.wrap(q_data.get("question", ""), width=55)[:3]):
         _draw_content(draw, (52, 96 + i * 36), line, TEXT_PRIMARY, 32)
 
     # Options (2x2 grid)
