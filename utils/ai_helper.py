@@ -99,11 +99,12 @@ def simplify_concept(model, concept: str, grade: str = "6",
 
 # ── Feature 2: Voice-Triggered Quizzing ──────────────────────────────────────
 
-def generate_quiz(model, topic: str, num_q: int = 4,
-                  grade: str = "General", subject: str = "General", lang: str = "en") -> list:
+def generate_quiz(model, topic: str, num_q: int = 10,
+                  grade: str = "General", subject: str = "General", lang: str = "en",
+                  exclude_questions: list = None) -> list:
     from prompts.quiz import build
     try:
-        text = _call(model, build(topic, num_q, grade, subject, lang))
+        text = _call(model, build(topic, num_q, grade, subject, lang, exclude_questions or []))
         return _parse_json_list(text)
     except Exception:
         return []

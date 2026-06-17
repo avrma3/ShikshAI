@@ -5,7 +5,15 @@ Grade-adaptive difficulty and format.
 from prompts.hindi_quality import get_hindi_lang_rule
 
 
-def build(topic: str, num_q: int, grade: str, subject: str = "General", lang: str = "en") -> str:
+def _exclude_block(qs: list) -> str:
+    if not qs:
+        return ""
+    items = "\n".join(f"  - {q}" for q in qs[:30])
+    return f"\n* DO NOT ask any of these already-asked questions (generate completely new ones):\n{items}"
+
+
+def build(topic: str, num_q: int, grade: str, subject: str = "General", lang: str = "en",
+          exclude_questions: list = None) -> str:
 
     if lang == "hi":
         lang_rule = (
@@ -83,4 +91,5 @@ CONSTRAINTS:
 * Each question MUST have exactly keys A, B, C, D
 * "answer" MUST be one of: A, B, C, D
 * Follow NCERT Grade {grade} curriculum
-"""
+* NEVER repeat a question — every question must be unique and different from each other
+{_exclude_block(exclude_questions)}"""

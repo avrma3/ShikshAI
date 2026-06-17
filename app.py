@@ -1294,7 +1294,7 @@ with tab2:
         typed_topic  = st.text_input(T["t2_type"], placeholder=T["t2_placeholder"],
                                      key="t2_text_input")
         topic_val = spoken_topic or typed_topic
-        num_q = st.slider(T["t2_num_q"], 2, 8, 4)
+        num_q = st.slider(T["t2_num_q"], 2, 15, 10)
 
         do_quiz = st.button(T["t2_btn"], key="quiz_gen_btn") or st.session_state.pop("_t2_auto_quiz", False)
         if do_quiz:
@@ -1303,8 +1303,18 @@ with tab2:
             else:
                 with st.spinner(T["t2_spinner"]):
                     from utils.ai_helper import generate_quiz
-                    questions = generate_quiz(model, topic_val, num_q, grade, subject, lang=_lang)
+                    # Retrieve already-asked questions for this topic+grade+subject combo
+                    _qkey   = f"{topic_val.strip().lower()}|{grade}|{subject}|{_lang}"
+                    _prev   = st.session_state.get("_quiz_asked_qs", {}).get(_qkey, [])
+                    questions = generate_quiz(model, topic_val, num_q, grade, subject,
+                                              lang=_lang, exclude_questions=_prev)
                     if questions:
+                        # Track these questions so they won't repeat next time
+                        _new_texts = [q.get("question", "") for q in questions if q.get("question")]
+                        _asked_map = st.session_state.get("_quiz_asked_qs", {})
+                        _asked_map[_qkey] = (_prev + _new_texts)[-60:]  # keep last 60
+                        st.session_state["_quiz_asked_qs"] = _asked_map
+
                         st.session_state.quiz_questions  = questions
                         st.session_state.quiz_index      = 0
                         st.session_state.quiz_answered   = {}
