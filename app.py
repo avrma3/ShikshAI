@@ -93,17 +93,11 @@ _SHADOW  = "0 1px 3px rgba(0,0,0,0.5),0 4px 20px rgba(0,0,0,0.3)"  if dark else 
 _ANS_OK_T= "#4ade80"      if dark else "#16a34a"
 _ANS_NG_T= "#f87171"      if dark else "#dc2626"
 
-st.markdown("""
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900&display=swap" rel="stylesheet">
-""", unsafe_allow_html=True)
-
 st.markdown(f"""
 <style>
 /* ── Reset ──────────────────────────────────────────────────────────────── */
 *, html, body, [class*="css"] {{
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
 }}
@@ -728,7 +722,7 @@ def _show_confetti():
     import random
     colors = ["#6366f1","#8b5cf6","#10b981","#fbbf24","#ef4444","#06b6d4","#f97316"]
     pieces = ""
-    for i in range(80):
+    for i in range(30):
         c    = colors[i % len(colors)]
         left = (i * 13) % 100
         delay= round((i * 0.04) % 1.5, 2)
@@ -751,6 +745,52 @@ def _load_gemini(api_key: str):
     return setup_gemini(api_key)
 
 
+# ── History stats cached — avoids 7 SQLite queries on every rerun ────────────
+@st.cache_data(ttl=60, show_spinner=False)
+def _cached_stats():
+    from services.history import stats
+    return stats()
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def _cached_recent(limit: int):
+    from services.history import recent
+    return recent(limit)
+
+
+import json as _json
+
+@st.cache_data(show_spinner=False)
+def _cached_concept_card(data_json: str) -> bytes:
+    from utils.visuals import create_concept_card
+    return create_concept_card(_json.loads(data_json))
+
+@st.cache_data(show_spinner=False)
+def _cached_quiz_card(q_json: str, q_num: int, total: int) -> bytes:
+    from utils.visuals import create_quiz_card
+    return create_quiz_card(_json.loads(q_json), q_num, total)
+
+@st.cache_data(show_spinner=False)
+def _cached_translation_card(data_json: str) -> bytes:
+    from utils.visuals import create_translation_card
+    return create_translation_card(_json.loads(data_json))
+
+@st.cache_data(show_spinner=False)
+def _cached_activity_card(data_json: str) -> bytes:
+    from utils.visuals import create_activity_card
+    return create_activity_card(_json.loads(data_json))
+
+@st.cache_data(show_spinner=False)
+def _cached_concept_diagram(data_json: str) -> bytes:
+    from utils.visuals import create_concept_diagram
+    return create_concept_diagram(_json.loads(data_json))
+
+@st.cache_data(show_spinner=False)
+def _cached_body_parts(grade: str, lang: str) -> bytes:
+    from utils.visuals import create_body_parts_diagram
+    return create_body_parts_diagram(grade, lang)
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # SIDEBAR
 # ══════════════════════════════════════════════════════════════════════════════
@@ -767,12 +807,10 @@ with st.sidebar:
 
     # Grade-aware subject selection — keeps every dropdown ≤ 6 items (always opens downward)
     if grade in ("LKG", "UKG"):
-        # No subject choice at this level
         subject = "General"
         st.markdown(f'<span style="color:{_TEXT2};font-size:0.82rem;">Subject: General</span>', unsafe_allow_html=True)
 
     elif grade in ("11", "12"):
-        # Two-tier: Stream (4 items) → Subject (≤5 items)  — both open downward safely
         if _lang == "hi":
             _stream_label = "धारा (Stream)"
             _stream_opts  = ["विज्ञान", "वाणिज्य", "कला / मानविकी", "सामान्य"]
@@ -805,7 +843,6 @@ with st.sidebar:
         subject = _eng_opts[_si]
 
     else:
-        # Class 1–10: 6 subjects — always fits below the selectbox
         if _lang == "hi":
             _subj_opts = ["विज्ञान", "गणित", "हिंदी", "अंग्रेज़ी", "सामाजिक विज्ञान", "सामान्य"]
         else:
@@ -959,27 +996,6 @@ def show_board_image(img_bytes: bytes):
     st.image(img_bytes, use_container_width=True)
 
 
-def render_mermaid(mermaid_code: str, height: int = 290):
-    if not mermaid_code or len(mermaid_code) < 10:
-        return
-    clean = mermaid_code.strip()
-    if clean.startswith("```"):
-        parts = clean.split("\n", 1)
-        clean = parts[1].rsplit("```", 1)[0].strip() if len(parts) > 1 else clean
-    html = f"""<!DOCTYPE html><html><head>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-<style>
-  body{{margin:0;padding:8px;background:transparent;}}
-  .mermaid{{background:rgba(22,28,60,0.88);border-radius:12px;padding:16px;text-align:center;}}
-  svg{{max-width:100%;height:auto;}}
-</style></head><body>
-<div class="mermaid">{clean}</div>
-<script>mermaid.initialize({{startOnLoad:true,theme:'dark',securityLevel:'loose',
-flowchart:{{useMaxWidth:true,htmlLabels:false}}}});</script>
-</body></html>"""
-    import streamlit.components.v1 as components
-    components.html(html, height=height, scrolling=False)
-
 
 def save_to_history(feature: str, topic: str = "",
                     data: dict = None, score_pct: float = None):
@@ -988,6 +1004,8 @@ def save_to_history(feature: str, topic: str = "",
         save(feature=feature, topic=topic,
              grade=grade, subject=subject,
              data=data or {}, score_pct=score_pct)
+        _cached_stats.clear()
+        _cached_recent.clear()
     except Exception:
         pass
 
@@ -1139,7 +1157,7 @@ with tab1:
                 ]
                 _is_body = any(kw in _stream_concept.lower() for kw in _body_kw)
                 if _is_body:
-                    _diag = create_body_parts_diagram(grade, _lang)
+                    _diag = _cached_body_parts(grade, _lang)
                 else:
                     try:
                         _diag = execute_diagram_code(
@@ -1148,7 +1166,7 @@ with tab1:
                     except Exception:
                         _diag = None
                     if not _diag:
-                        _diag = create_concept_diagram(data) if data else None
+                        _diag = _cached_concept_diagram(_json.dumps(data, ensure_ascii=False, sort_keys=True)) if data else None
                 st.session_state["_diagram_img"] = _diag
 
             # Streaming explanation last
@@ -1167,14 +1185,11 @@ with tab1:
             diag_img = st.session_state.get("_diagram_img")
             if diag_img:
                 show_board_image(diag_img)
-            elif data:
-                render_mermaid(data.get("mermaid", ""), height=300)
 
             # 2. SMART BOARD VISUAL
             if data and ("explanation" in data or "title" in data):
                 st.markdown(T["t1_board"])
-                from utils.visuals import create_concept_card
-                show_board_image(create_concept_card(data))
+                show_board_image(_cached_concept_card(_json.dumps(data, ensure_ascii=False, sort_keys=True)))
 
                 st.markdown(T["t1_voice"])
                 speak_text = data.get("speak_text", data.get("explanation", ""))
@@ -1327,7 +1342,7 @@ with tab2:
             from utils.visuals import create_quiz_card
 
             st.markdown(T["t2_board"])
-            show_board_image(create_quiz_card(q, idx + 1, len(qs)))
+            show_board_image(_cached_quiz_card(_json.dumps(q, ensure_ascii=False, sort_keys=True), idx + 1, len(qs)))
 
             st.markdown(T["t2_choose"])
             answered = st.session_state.quiz_answered
@@ -1417,8 +1432,7 @@ with tab3:
         result = st.session_state.get("trans_result", {})
         if result and "translation" in result:
             st.markdown(T["t3_board"])
-            from utils.visuals import create_translation_card
-            show_board_image(create_translation_card(result))
+            show_board_image(_cached_translation_card(_json.dumps(result, ensure_ascii=False, sort_keys=True)))
 
             st.markdown(T["t3_trans_label"])
             st.markdown(
@@ -1538,8 +1552,7 @@ var iv=setInterval(function(){{
         act = st.session_state.get("activity_data")
         if act:
             st.markdown(T["t4_board"])
-            from utils.visuals import create_activity_card
-            show_board_image(create_activity_card(act))
+            show_board_image(_cached_activity_card(_json.dumps(act, ensure_ascii=False, sort_keys=True)))
 
             title = act.get("title","Activity")
             st.markdown(f"""
@@ -1608,9 +1621,9 @@ with tab5:
     try:
         import pandas as pd
         import matplotlib.pyplot as plt
-        from services.history import stats as get_stats, recent as get_recent, clear_all
+        from services.history import clear_all
 
-        s    = get_stats()
+        s    = _cached_stats()
         feat = s.get("by_feature", {})
 
         # ── Metric cards ───────────────────────────────────────────────────────
@@ -1705,7 +1718,7 @@ with tab5:
             else:
                 _empty_state("📚", "", T["t5_no_topics"])
 
-            sessions_all = get_recent(200)
+            sessions_all = _cached_recent(200)
             if sessions_all:
                 df_export = pd.DataFrame(sessions_all)
                 st.download_button(
@@ -1716,67 +1729,10 @@ with tab5:
                     use_container_width=True,
                 )
 
-        # ── Engagement tracker ─────────────────────────────────────────────────
-        st.markdown("---")
-        st.markdown(T["t5_engage_title"])
-        st.caption(T["t5_engage_cap"])
-
-        quiz_scores = s.get("recent_scores",[])
-        topics_cnt  = len(s.get("top_topics",[]))
-        quizzes_cnt = feat.get("quiz",0)
-        avg_q       = s.get("avg_quiz_score",0)
-        pass_rate   = int(sum(1 for sc in quiz_scores if sc >= 60) / max(len(quiz_scores),1) * 100)
-        eng_score   = min(100, int(avg_q*0.55 + min(topics_cnt,10)*4 + min(quizzes_cnt,5)*4))
-        eng_color   = "#10b981" if eng_score >= 70 else "#fbbf24" if eng_score >= 40 else "#ef4444"
-        eng_label   = T["t5_excellent"] if eng_score >= 80 else T["t5_good"] if eng_score >= 60 else T["t5_developing"]
-
-        e1, e2, e3, e4 = st.columns(4)
-        for col, (label, val) in zip([e1,e2,e3,e4], [
-            (T["t5_eng_score"],  f"{eng_score}/100"),
-            (T["t5_pass"],       f"{pass_rate}%"),
-            (T["t5_topics_cov"], topics_cnt),
-            (T["t5_q_taken"],    quizzes_cnt),
-        ]):
-            col.markdown(f"""
-<div class="metric-card">
-  <div class="metric-value">{val}</div>
-  <div class="metric-label">{label}</div>
-</div>""", unsafe_allow_html=True)
-
-        st.markdown("")
-        import streamlit.components.v1 as _ec
-        _ec.html(f"""
-<div style="padding:8px 0;font-family:Inter,sans-serif;">
-  <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:6px;">{T['t5_eng_level']}</div>
-  <div style="background:rgba(255,255,255,0.08);border-radius:50px;height:18px;overflow:hidden;">
-    <div style="background:linear-gradient(90deg,#4f46e5,{eng_color});height:100%;
-                width:{eng_score}%;border-radius:50px;box-shadow:0 0 12px {eng_color}66;
-                transition:width 1.5s cubic-bezier(0.34,1.2,0.64,1);"></div>
-  </div>
-  <div style="font-size:1.4rem;font-weight:800;color:{eng_color};margin-top:8px;">
-    {eng_score}% — {eng_label}
-  </div>
-</div>""", height=85)
-
-        _top_topics = s.get("top_topics",[])
-        if _top_topics:
-            st.markdown(T["t5_topics_head"])
-            tc_cols   = st.columns(min(4, len(_top_topics)))
-            tc_colors = ["#6366f1","#8b5cf6","#10b981","#fbbf24","#f97316","#06b6d4","#ec4899","#14b8a6"]
-            for ti, (tn, tc) in enumerate(_top_topics[:8]):
-                bc = tc_colors[ti % len(tc_colors)]
-                with tc_cols[ti % 4]:
-                    st.markdown(f"""
-<div style="background:{bc}18;border:1px solid {bc}55;border-radius:10px;
-     padding:10px 12px;margin:4px 0;text-align:center;">
-  <div style="font-weight:700;color:{bc};font-size:0.85rem;margin-bottom:2px;">{tn[:22]}</div>
-  <div style="color:{_TEXT2};font-size:0.75rem;">{tc} session{"s" if tc>1 else ""}</div>
-</div>""", unsafe_allow_html=True)
-
         # ── Recent sessions table ──────────────────────────────────────────────
         st.markdown("---")
         st.markdown(T["t5_recent"])
-        sessions = get_recent(25)
+        sessions = _cached_recent(25)
         if sessions:
             icon_map = {"concept":"🧠","quiz":"❓","translation":"🌐","activity":"⏱️","ask_ai":"💬"}
             df = pd.DataFrame([{

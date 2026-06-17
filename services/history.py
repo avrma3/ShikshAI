@@ -8,6 +8,7 @@ import os
 from datetime import datetime
 
 _DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shiksha_sessions.db")
+_db_ready = False
 
 
 def _conn() -> sqlite3.Connection:
@@ -17,6 +18,9 @@ def _conn() -> sqlite3.Connection:
 
 
 def init_db() -> None:
+    global _db_ready
+    if _db_ready:
+        return
     with _conn() as db:
         db.execute("""
         CREATE TABLE IF NOT EXISTS sessions (
@@ -30,6 +34,7 @@ def init_db() -> None:
             score_pct  REAL
         )""")
         db.commit()
+    _db_ready = True
 
 
 def save(feature: str, topic: str = "", grade: str = "", subject: str = "",
