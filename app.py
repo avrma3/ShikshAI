@@ -591,6 +591,7 @@ footer {{ display: none !important; }}
 [data-testid="stToolbar"]        {{ display: none !important; }}
 [data-testid="stDeployButton"]   {{ display: none !important; }}
 [data-testid="stStatusWidget"]   {{ display: none !important; }}
+[data-testid="stBottom"]         {{ display: none !important; }}
 [data-testid="manage-app-button"]{{ display: none !important; }}
 .stAppDeployButton               {{ display: none !important; }}
 .viewerBadge_container__1QSob   {{ display: none !important; }}
@@ -773,6 +774,25 @@ hr {{ border-top: 1px solid #e2e8f0 !important; margin: 16px 0 !important; }}
 """}
 </style>
 """, unsafe_allow_html=True)
+
+# Hide "Manage app" button — CSS alone misses it because it renders after page load
+import streamlit.components.v1 as _components
+_components.html("""<script>
+(function(){
+  function rm(){
+    document.querySelectorAll('button').forEach(function(b){
+      if(b.innerText && b.innerText.trim()==='Manage app'){
+        var p=b.closest('[data-testid]')||b.parentElement;
+        if(p) p.style.display='none';
+      }
+    });
+    var bot=document.querySelector('[data-testid="stBottom"]');
+    if(bot) bot.style.display='none';
+  }
+  rm();
+  new MutationObserver(rm).observe(document.body,{childList:true,subtree:true});
+})();
+</script>""", height=0)
 
 
 # ── Confetti ───────────────────────────────────────────────────────────────────
