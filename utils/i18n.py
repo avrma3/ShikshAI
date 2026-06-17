@@ -45,12 +45,12 @@ Hindi, English or Hinglish — all accepted!""",
         "api_key_help":     "Set <code>GEMINI_API_KEY=your_key</code> in the <code>.env</code> file.",
 
         # ── Tabs ──────────────────────────────────────────────────────────────
-        "tab1": "🧠  Concept Simplifier",
-        "tab2": "❓  Voice Quiz",
-        "tab3": "🌐  Bilingual Translation",
-        "tab4": "⏱️  Activity Guide",
-        "tab5": "📊  Teacher Dashboard",
-        "tab6": "💬  Ask AI",
+        "tab1": "🧠 Concept",
+        "tab2": "❓ Quiz",
+        "tab3": "🌐 Translate",
+        "tab4": "⏱️ Activity",
+        "tab5": "📊 Dashboard",
+        "tab6": "💬 Ask AI",
 
         # ── Tab 1: Concept ────────────────────────────────────────────────────
         "t1_title":         "🧠 Live Concept Simplification",
@@ -290,12 +290,12 @@ Group activity on fractions
         "api_key_help":     "<code>.env</code> फ़ाइल में <code>GEMINI_API_KEY=your_key</code> सेट करें।",
 
         # ── Tabs ──────────────────────────────────────────────────────────────
-        "tab1": "🧠  अवधारणा सरलीकरण",
-        "tab2": "❓  आवाज़ क्विज़",
-        "tab3": "🌐  द्विभाषी अनुवाद",
-        "tab4": "⏱️  गतिविधि मार्गदर्शिका",
-        "tab5": "📊  शिक्षक डैशबोर्ड",
-        "tab6": "💬  AI से पूछो",
+        "tab1": "🧠 कॉन्सेप्ट",
+        "tab2": "❓ क्विज़",
+        "tab3": "🌐 अनुवाद",
+        "tab4": "⏱️ गतिविधि",
+        "tab5": "📊 डैशबोर्ड",
+        "tab6": "💬 AI",
 
         # ── Tab 1: Concept ────────────────────────────────────────────────────
         "t1_title":         "🧠 लाइव अवधारणा सरलीकरण",

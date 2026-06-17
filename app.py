@@ -27,7 +27,7 @@ st.set_page_config(
     page_title="ShikshAI — Smart Teaching Assistant",
     page_icon=_get_favicon(),
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
 )
 
 # ── Session state defaults ─────────────────────────────────────────────────────
@@ -634,20 +634,72 @@ details summary {{ color: {_TEXT} !important; }}
 
 /* ── Mobile ──────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {{
-  .main-header {{ padding: 24px 20px 20px !important; }}
-  .main-header h1 {{ font-size: 1.75rem !important; }}
-  .main-header p {{ font-size: 0.875rem !important; }}
-  .hpill {{ font-size: 0.7rem !important; padding: 3px 9px !important; }}
-  .stTabs [data-baseweb="tab"] {{ font-size: 0.75rem !important; padding: 7px 10px !important; }}
-  .section-title {{ font-size: 1rem !important; }}
-  .display-box {{ padding: 12px 14px !important; font-size: 0.9375rem !important; }}
-  div[data-testid="stVerticalBlock"] > div:has(> .stButton) button {{
-    font-size: 0.875rem !important; padding: 9px 14px !important;
+  /* Header */
+  .main-header {{ padding: 20px 16px 16px !important; margin-bottom: 16px !important; border-radius: 12px !important; }}
+  .main-header h1 {{ font-size: 1.6rem !important; }}
+  .main-header p {{ font-size: 0.8rem !important; margin-bottom: 12px !important; }}
+  .header-pills {{ gap: 4px !important; }}
+  .hpill {{ font-size: 0.65rem !important; padding: 3px 8px !important; }}
+
+  /* Tabs — horizontal scroll so names never wrap or shrink */
+  .stTabs [data-baseweb="tab-list"] {{
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding: 3px !important;
+    gap: 1px !important;
   }}
-}}
-@media (max-width: 480px) {{
-  .main-header h1 {{ font-size: 1.4rem !important; }}
+  .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {{ display: none !important; }}
+  .stTabs [data-baseweb="tab"] {{
+    font-size: 0.8rem !important;
+    padding: 8px 12px !important;
+    white-space: nowrap !important;
+    min-width: max-content !important;
+    flex-shrink: 0 !important;
+  }}
+
+  /* Buttons — touch-friendly */
+  div[data-testid="stVerticalBlock"] > div:has(> .stButton) button {{
+    font-size: 0.875rem !important;
+    padding: 12px 14px !important;
+    min-height: 48px !important;
+  }}
+  .chip-col button {{ min-height: 40px !important; height: auto !important; padding: 6px 10px !important; font-size: 0.8rem !important; }}
+
+  /* Cards & sections */
+  .feature-card {{ padding: 16px !important; border-radius: 10px !important; }}
+  .glass-card {{ padding: 14px 16px !important; }}
+  .grad-border {{ padding: 14px !important; }}
+  .section-title {{ font-size: 1rem !important; }}
+  .display-box {{ padding: 12px 14px !important; font-size: 0.9375rem !important; line-height: 1.65 !important; }}
+  .empty-state {{ padding: 36px 16px !important; }}
+
+  /* Metric cards — 2 per row on mobile */
+  .metric-card {{ padding: 14px 10px !important; border-radius: 10px !important; }}
   .metric-value {{ font-size: 1.6rem !important; }}
+  .metric-label {{ font-size: 0.6rem !important; }}
+
+  /* Step / answer cards */
+  .step-card {{ padding: 10px 12px !important; }}
+  .answer-correct, .answer-wrong, .answer-neutral {{ padding: 10px 12px !important; font-size: 0.875rem !important; }}
+
+  /* Prevent iOS zoom on input focus — needs 16px minimum */
+  .stTextInput input, .stTextArea textarea, .stNumberInput input {{
+    font-size: 16px !important;
+  }}
+
+  /* Reduce main content side padding */
+  .block-container {{ padding-left: 1rem !important; padding-right: 1rem !important; padding-top: 0.5rem !important; }}
+}}
+
+@media (max-width: 480px) {{
+  .main-header h1 {{ font-size: 1.3rem !important; }}
+  .main-header p {{ display: none !important; }}
+  .header-pills {{ display: none !important; }}
+  .metric-value {{ font-size: 1.4rem !important; }}
+  .stTabs [data-baseweb="tab"] {{ font-size: 0.75rem !important; padding: 7px 10px !important; }}
+  .block-container {{ padding-left: 0.5rem !important; padding-right: 0.5rem !important; }}
 }}
 
 /* ── Light-mode targeted overrides ──────────────────────────────────────── */
