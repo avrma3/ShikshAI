@@ -586,11 +586,15 @@ hr {{
 }}
 
 /* ── Hide Streamlit chrome ───────────────────────────────────────────────── */
-#MainMenu, footer, header {{ visibility: hidden; }}
-[data-testid="stToolbar"]      {{ display: none !important; }}
-[data-testid="stDeployButton"] {{ display: none !important; }}
-[data-testid="manage-app-button"], .stAppDeployButton {{ display: none !important; }}
-iframe[title="manage-app"] {{ display: none !important; }}
+#MainMenu, header {{ visibility: hidden; }}
+footer {{ display: none !important; }}
+[data-testid="stToolbar"]        {{ display: none !important; }}
+[data-testid="stDeployButton"]   {{ display: none !important; }}
+[data-testid="stStatusWidget"]   {{ display: none !important; }}
+[data-testid="manage-app-button"]{{ display: none !important; }}
+.stAppDeployButton               {{ display: none !important; }}
+.viewerBadge_container__1QSob   {{ display: none !important; }}
+.styles_viewerBadge__1yB5_      {{ display: none !important; }}
 
 /* ── Dropdowns open downward ─────────────────────────────────────────────── */
 ul[role="listbox"] {{ max-height: 220px !important; overflow-y: auto !important; }}
