@@ -629,9 +629,30 @@ button[data-testid*="deploy"]    {{ display: none !important; }}
 button[data-testid*="manage"]    {{ display: none !important; }}
 [class*="deployButton"]          {{ display: none !important; }}
 [class*="manageApp"]             {{ display: none !important; }}
-[data-testid="stChatMessageActionBar"] {{ display: none !important; }}
-[data-testid*="ActionButton"]    {{ display: none !important; }}
-.stChatMessageActionBar          {{ display: none !important; }}
+/* ── Chat message action buttons (Copy / thumbs) ────────────────────────── */
+[data-testid="stChatMessageActionBar"] {{
+  background: rgba(99,102,241,0.06) !important;
+  border-radius: 10px !important;
+  padding: 3px 5px !important;
+  border: 1px solid rgba(99,102,241,0.15) !important;
+  backdrop-filter: blur(4px) !important;
+}}
+[data-testid="stChatMessageActionBar"] button,
+[data-testid*="ActionButton"] {{
+  background: transparent !important;
+  border: 1px solid rgba(99,102,241,0.18) !important;
+  border-radius: 7px !important;
+  color: rgba(139,140,255,0.75) !important;
+  padding: 4px 8px !important;
+  font-size: 0.75rem !important;
+  transition: all 0.15s ease !important;
+}}
+[data-testid="stChatMessageActionBar"] button:hover,
+[data-testid*="ActionButton"]:hover {{
+  background: rgba(99,102,241,0.12) !important;
+  border-color: rgba(99,102,241,0.4) !important;
+  color: #818cf8 !important;
+}}
 
 /* Overlay covers bottom-right corner where "Manage app" button sits */
 body::after {{
