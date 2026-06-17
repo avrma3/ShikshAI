@@ -775,22 +775,27 @@ hr {{ border-top: 1px solid #e2e8f0 !important; margin: 16px 0 !important; }}
 </style>
 """, unsafe_allow_html=True)
 
-# Hide "Manage app" button — CSS alone misses it because it renders after page load
+# Hide "Manage app" button — use parent.document to reach outside the iframe sandbox
 import streamlit.components.v1 as _components
 _components.html("""<script>
 (function(){
   function rm(){
-    document.querySelectorAll('button').forEach(function(b){
-      if(b.innerText && b.innerText.trim()==='Manage app'){
-        var p=b.closest('[data-testid]')||b.parentElement;
-        if(p) p.style.display='none';
-      }
-    });
-    var bot=document.querySelector('[data-testid="stBottom"]');
-    if(bot) bot.style.display='none';
+    try{
+      var d=parent.document;
+      var bot=d.querySelector('[data-testid="stBottom"]');
+      if(bot) bot.style.setProperty('display','none','important');
+      d.querySelectorAll('button').forEach(function(b){
+        if(b.innerText&&b.innerText.trim()==='Manage app'){
+          var p=b.closest('[data-testid]')||b.parentElement;
+          if(p) p.style.setProperty('display','none','important');
+        }
+      });
+    }catch(e){}
   }
   rm();
-  new MutationObserver(rm).observe(document.body,{childList:true,subtree:true});
+  try{
+    new parent.MutationObserver(rm).observe(parent.document.body,{childList:true,subtree:true});
+  }catch(e){}
 })();
 </script>""", height=0)
 
