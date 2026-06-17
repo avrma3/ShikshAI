@@ -968,7 +968,7 @@ def _diagram_heart(data: dict, lang: str = "en") -> bytes:
     def label_line(x1, y1, x2, y2, txt, col, right=True):
         draw.line([(x1, y1), (x2, y2)], fill=col, width=1)
         anchor = "lm" if right else "rm"
-        _draw_sci(draw, (x2 + (6 if right else -6), y2), txt, col, f_sm, anchor=anchor)
+        _draw_content(draw, (x2 + (6 if right else -6), y2), txt, col, 14, anchor=anchor)
 
     # Right labels
     label_line(hx+155, hy-225, 610, hy-260, _L("Aorta",           lang), RED)
