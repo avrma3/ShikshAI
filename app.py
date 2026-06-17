@@ -604,6 +604,20 @@ button[data-testid*="manage"]    {{ display: none !important; }}
 [class*="deployButton"]          {{ display: none !important; }}
 [class*="manageApp"]             {{ display: none !important; }}
 
+/* Overlay covers bottom-right corner where "Manage app" button sits */
+body::after {{
+  content: '' !important;
+  position: fixed !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  width: 185px !important;
+  height: 58px !important;
+  z-index: 2147483647 !important;
+  background: var(--background-color) !important;
+  display: block !important;
+  pointer-events: all !important;
+}}
+
 /* ── Dropdowns open downward ─────────────────────────────────────────────── */
 ul[role="listbox"] {{ max-height: 220px !important; overflow-y: auto !important; }}
 [data-baseweb="popover"] [data-baseweb="menu"] {{ max-height: 220px !important; overflow-y: auto !important; }}
@@ -782,39 +796,6 @@ hr {{ border-top: 1px solid #e2e8f0 !important; margin: 16px 0 !important; }}
 </style>
 """, unsafe_allow_html=True)
 
-# Hide "Manage app" button — poll + MutationObserver via parent.document
-import streamlit.components.v1 as _components
-_components.html("""<script>
-(function(){
-  function rm(){
-    try{
-      var d=parent.document;
-      // hide stBottom bar
-      ['stBottom','stStatusWidget','stToolbar','stDeployButton'].forEach(function(id){
-        var el=d.querySelector('[data-testid="'+id+'"]');
-        if(el) el.style.setProperty('display','none','important');
-      });
-      // hide by button text
-      d.querySelectorAll('button').forEach(function(b){
-        if((b.innerText||b.textContent||'').trim()==='Manage app'){
-          b.style.setProperty('display','none','important');
-          var p=b.parentElement;
-          while(p&&p!==d.body){
-            p.style.setProperty('display','none','important');
-            p=p.parentElement;
-          }
-        }
-      });
-    }catch(e){}
-  }
-  // Poll every 200ms for first 15 seconds
-  var n=0,t=setInterval(function(){ rm(); if(++n>75) clearInterval(t); },200);
-  // Also watch for DOM changes
-  try{
-    new parent.MutationObserver(rm).observe(parent.document.body,{childList:true,subtree:true});
-  }catch(e){}
-})();
-</script>""", height=0)
 
 
 # ── Confetti ───────────────────────────────────────────────────────────────────
