@@ -518,29 +518,34 @@ button[kind="primary"]:hover,
   background: rgba(99,102,241,0.08);
   border-color: rgba(99,102,241,0.35);
 }}
-/* Matches Streamlit primary pill button height — used alongside 🔊 Speak */
+/* Identical look to Streamlit primary pill button — used alongside 🔊 Speak */
 .copy-btn-primary {{
   display: block;
   width: 100%;
   min-height: 42px;
   border-radius: 50px;
-  padding: 8px 16px;
+  padding: 8px 22px;
   font-size: 0.875rem;
   font-weight: 600;
-  background: transparent;
-  color: #818cf8;
-  border: 1.5px solid rgba(99,102,241,0.45);
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #ffffff;
+  border: none;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 4px rgba(99,102,241,0.15);
+  box-shadow: 0 2px 12px rgba(79,70,229,0.4);
   text-align: center;
   box-sizing: border-box;
+  letter-spacing: -0.01em;
 }}
 .copy-btn-primary:hover {{
-  background: rgba(99,102,241,0.1);
-  border-color: rgba(99,102,241,0.7);
-  box-shadow: 0 2px 10px rgba(99,102,241,0.25);
+  background: linear-gradient(135deg, #4338ca, #6d28d9);
+  box-shadow: 0 4px 18px rgba(79,70,229,0.55);
+  transform: translateY(-1px);
+}}
+.copy-btn-primary:active {{
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(79,70,229,0.3);
 }}
 
 /* ── Typing indicator ────────────────────────────────────────────────────── */
