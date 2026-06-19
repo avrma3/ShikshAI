@@ -13,7 +13,7 @@ def build(concept: str, grade: str, subject: str = "General", lang: str = "en") 
             get_hindi_lang_rule(grade)
             + "\nCRITICAL: title सहित सभी fields हिंदी में होने चाहिए।"
         )
-        speak_rule  = "speak_text: 2-3 उत्साही हिंदी वाक्य जो कक्षा में ज़ोर से पढ़े जाएँ — natural teacher tone"
+        speak_rule  = '"speak_text": "2-3 उत्साही हिंदी वाक्य जो कक्षा में ज़ोर से पढ़े जाएँ — natural teacher tone"'
         summary_key = "hindi_summary"
         summary_val = f"एक पंक्ति में {concept} का सरल, natural हिंदी सारांश"
     else:
@@ -21,7 +21,7 @@ def build(concept: str, grade: str, subject: str = "General", lang: str = "en") 
             "Clear, simple ENGLISH. Short sentences (max 12 words each).\n"
             "Warm tone. Relatable Indian analogies explained in English."
         )
-        speak_rule  = "speak_text: 2-3 enthusiastic English sentences to read aloud"
+        speak_rule  = '"speak_text": "2-3 enthusiastic English sentences to read aloud"'
         summary_key = "hindi_summary"
         summary_val = f"One-line summary of {concept}"
 

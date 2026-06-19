@@ -633,9 +633,13 @@ hr {{
   margin: 16px 0;
 }}
 
-/* ── Hide Streamlit chrome — sidebar toggle fully untouched ─────────────── */
-#MainMenu                        {{ display: none !important; }}
-header                           {{ background: transparent !important; }}
+/* ── Streamlit chrome — header blends with app, sidebar toggle native ───── */
+/* Header matches app background — seamless look, toggle works natively */
+header[data-testid="stHeader"] {{
+  background: {_BG} !important;
+  border-bottom: none !important;
+}}
+#MainMenu                        {{ visibility: hidden; }}
 [data-testid="stToolbar"]        {{ display: none !important; }}
 [data-testid="stStatusWidget"]   {{ display: none !important; }}
 [data-testid="stDeployButton"]   {{ display: none !important; }}
@@ -645,8 +649,6 @@ header                           {{ background: transparent !important; }}
 .stAppDeployButton               {{ display: none !important; }}
 .viewerBadge_container__1QSob   {{ display: none !important; }}
 .styles_viewerBadge__1yB5_      {{ display: none !important; }}
-.terminalButton                  {{ display: none !important; }}
-button[kind="borderlessIcon"][data-testid*="deploy"] {{ display: none !important; }}
 button[data-testid*="deploy"]    {{ display: none !important; }}
 button[data-testid*="manage"]    {{ display: none !important; }}
 [class*="deployButton"]          {{ display: none !important; }}
