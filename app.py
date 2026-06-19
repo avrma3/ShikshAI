@@ -497,6 +497,21 @@ button[kind="primary"]:hover,
   animation: slideUp 0.2s ease;
 }}
 
+/* ── Speak button same size as Copy action-pill ─────────────────────────── */
+.stMarkdown:has(.t1-speak-anchor) ~ [data-testid="stButton"] button,
+.stMarkdown:has(.t1-speak-anchor) ~ [data-testid="stButton"] button:hover {{
+  padding: 4px 10px !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  width: auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  box-shadow: none !important;
+  transform: none !important;
+  letter-spacing: 0 !important;
+}}
+
 /* ── Action pills (copy/speak) ───────────────────────────────────────────── */
 .action-pill {{
   display: inline-flex;
@@ -1644,6 +1659,7 @@ with tab1:
                     with _cb1:
                         _copy_btn(_ans_text, "📋 Copy")
                     with _cb2:
+                        st.markdown('<span class="t1-speak-anchor"></span>', unsafe_allow_html=True)
                         if st.button("🔊 Speak", key="t1_speak_ans", type="primary"):
                             play_tts(_ans_text[:600], lang=tts_lang)
         else:
