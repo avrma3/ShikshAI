@@ -520,9 +520,11 @@ button[kind="primary"]:hover,
 }}
 /* Identical look to Streamlit primary pill button — used alongside 🔊 Speak */
 .copy-btn-primary {{
-  display: block;
-  width: 100%;
-  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-height: 38px;
   border-radius: 50px;
   padding: 8px 22px;
   font-size: 0.875rem;
@@ -534,9 +536,8 @@ button[kind="primary"]:hover,
   font-family: inherit;
   transition: all 0.15s ease;
   box-shadow: 0 2px 12px rgba(79,70,229,0.4);
-  text-align: center;
-  box-sizing: border-box;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }}
 .copy-btn-primary:hover {{
   background: linear-gradient(135deg, #4338ca, #6d28d9);
@@ -1645,8 +1646,7 @@ with tab1:
                     with _cb1:
                         _copy_btn(_ans_text, "📋 Copy", match_primary=True)
                     with _cb2:
-                        if st.button("🔊 Speak", key="t1_speak_ans",
-                                     type="primary", use_container_width=True):
+                        if st.button("🔊 Speak", key="t1_speak_ans", type="primary"):
                             play_tts(_ans_text[:600], lang=tts_lang)
         else:
             _empty_state("🧠", T["t1_empty_title"], T["t1_empty_sub"])
