@@ -14,7 +14,7 @@ def _get_client():
 
 
 def speak(text: str, lang: str = "hi") -> bytes:
-    """Convert text to MP3 bytes using OpenAI TTS (nova voice)."""
+    """Convert text to MP3 bytes using OpenAI TTS (nova voice). Returns b'' on failure."""
     if not text:
         return b""
     try:

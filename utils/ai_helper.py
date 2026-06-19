@@ -91,9 +91,14 @@ def simplify_concept(model, concept: str, grade: str = "6",
         return _parse_json(text, "explanation")
     except Exception as e:
         return {
-            "explanation": f"AI error: {e}",
-            "title": concept,
-            "speak_text": f"Sorry, concept load nahi hua.",
+            "title":         concept,
+            "explanation":   f"AI error: {e}",
+            "example":       "",
+            "fun_fact":      "",
+            "key_points":    [],
+            "formula":       "",
+            "hindi_summary": "",
+            "speak_text":    "Sorry, concept load nahi hua.",
         }
 
 
