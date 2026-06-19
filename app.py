@@ -1637,20 +1637,17 @@ with tab1:
                 else:
                     with st.chat_message("assistant"):
                         st.markdown(has_answer)
+                # Copy + Speak buttons
+                _ans_text = st.session_state.get("_t1_gpt4o_answer", "")
+                if _ans_text and _ans_text != "__streaming__":
+                    _cb1, _cb2, _ = st.columns([1, 1, 3])
+                    with _cb1:
+                        _copy_btn(_ans_text, "📋 Copy")
+                    with _cb2:
+                        if st.button("🔊 Speak", key="t1_speak_ans", type="primary"):
+                            play_tts(_ans_text[:600], lang=tts_lang)
         else:
             _empty_state("🧠", T["t1_empty_title"], T["t1_empty_sub"])
-
-# Copy + Speak — at tab1 level (no nesting), so columns never stack
-_t1_ans = st.session_state.get("_t1_gpt4o_answer", "")
-if _t1_ans and _t1_ans != "__streaming__":
-    st.divider()
-    _, _bc1, _bc2, _ = st.columns([3, 2, 2, 3])
-    with _bc1:
-        _copy_btn(_t1_ans, "📋 Copy", match_primary=True)
-    with _bc2:
-        if st.button("🔊 Speak", key="t1_speak_ans",
-                     type="primary", use_container_width=True):
-            play_tts(_t1_ans[:600], lang=tts_lang)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
