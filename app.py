@@ -1627,14 +1627,16 @@ with tab1:
                 else:
                     with st.chat_message("assistant"):
                         st.markdown(has_answer)
-                # Copy + Speak buttons for explanation
+                # Copy + Speak buttons — rendered below the explanation
                 _ans_text = st.session_state.get("_t1_gpt4o_answer", "")
                 if _ans_text and _ans_text != "__streaming__":
-                    _cb1, _cb2, _ = st.columns([1, 1, 3])
+                    st.divider()
+                    _cb1, _cb2 = st.columns(2)
                     with _cb1:
                         _copy_btn(_ans_text, "📋 Copy", match_primary=True)
                     with _cb2:
-                        if st.button("🔊 Speak", key="t1_speak_ans", type="primary"):
+                        if st.button("🔊 Speak", key="t1_speak_ans",
+                                     type="primary", use_container_width=True):
                             play_tts(_ans_text[:600], lang=tts_lang)
         else:
             _empty_state("🧠", T["t1_empty_title"], T["t1_empty_sub"])
