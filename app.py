@@ -1642,7 +1642,7 @@ with tab1:
                 _ans_text = st.session_state.get("_t1_gpt4o_answer", "")
                 if _ans_text and _ans_text != "__streaming__":
                     st.divider()
-                    _cb1, _cb2 = st.columns(2)
+                    _cb1, _cb2, _ = st.columns([2, 2, 6])
                     with _cb1:
                         _copy_btn(_ans_text, "📋 Copy", match_primary=True)
                     with _cb2:
