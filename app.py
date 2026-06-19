@@ -601,23 +601,13 @@ section.main, .main, .stMain {{
   z-index: 9999;
 }}
 
-/* ── Sidebar — force always visible, never collapse ─────────────────────── */
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
 section[data-testid="stSidebar"] {{
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  transform: translateX(0) !important;
-  min-width: 244px !important;
-  width: 244px !important;
   background: {_SIDEBAR} !important;
   border-right: 1px solid {_BORDER} !important;
 }}
-section[data-testid="stSidebar"] > div,
-section[data-testid="stSidebar"] > div:first-child,
-[data-testid="stSidebarContent"] {{
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
+[data-testid="stSidebarContent"],
+section[data-testid="stSidebar"] > div:first-child {{
   background: {_SIDEBAR} !important;
 }}
 
@@ -643,11 +633,24 @@ hr {{
   margin: 16px 0;
 }}
 
-/* ── Hide Streamlit chrome ───────────────────────────────────────────────── */
-#MainMenu, header {{ visibility: hidden; }}
-/* Hide the sidebar collapse button so sidebar stays permanently open */
-[data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
-button[data-testid="baseButton-headerNoPadding"] {{ display: none !important; }}
+/* ── Hide Streamlit chrome — keep sidebar toggle working ────────────────── */
+#MainMenu {{ visibility: hidden; }}
+header {{
+  background: transparent !important;
+  height: 2.875rem !important;
+}}
+/* Hide everything inside header EXCEPT sidebar toggle buttons */
+header > * {{ visibility: hidden; }}
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarCollapseButton"] *,
+[data-testid="collapsedControl"],
+[data-testid="collapsedControl"] *,
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="stSidebarCollapsedControl"] * {{
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: all !important;
+}}
 footer {{ display: none !important; }}
 [data-testid="stToolbar"]        {{ display: none !important; }}
 [data-testid="stDeployButton"]   {{ display: none !important; }}
