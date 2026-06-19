@@ -860,6 +860,133 @@ hr {{ border-top: 1px solid #e2e8f0 !important; margin: 16px 0 !important; }}
 .badge-done    {{ background: rgba(99,102,241,0.08) !important; }}
 .badge-success {{ background: rgba(16,185,129,0.08) !important; color: #059669 !important; }}
 """}
+
+/* ── Premium output section labels ──────────────────────────────────────── */
+.out-label {{
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 20px 0 8px;
+  padding: 8px 14px 8px 13px;
+  background: linear-gradient(90deg, rgba(99,102,241,0.07) 0%, transparent 90%);
+  border-radius: 0 10px 10px 0;
+  border-left: 3px solid #6366f1;
+}}
+.out-label-ic {{ font-size: 1rem; line-height: 1; flex-shrink: 0; }}
+.out-label-tx {{
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #818cf8;
+  flex: 1;
+}}
+.out-label-badge {{
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(99,102,241,0.1);
+  color: #818cf8;
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 5px;
+  padding: 2px 8px;
+}}
+
+/* ── Image output glow card ──────────────────────────────────────────────── */
+[data-testid="stImage"] {{
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  margin-bottom: 4px !important;
+  box-shadow:
+    0 0 0 1px rgba(99,102,241,0.13),
+    0 6px 30px rgba(0,0,0,0.45) !important;
+  transition: box-shadow 0.25s ease !important;
+}}
+[data-testid="stImage"]:hover {{
+  box-shadow:
+    0 0 0 1px rgba(99,102,241,0.26),
+    0 10px 44px rgba(0,0,0,0.5),
+    0 0 48px rgba(99,102,241,0.07) !important;
+}}
+[data-testid="stImage"] > div,
+[data-testid="stImage"] > div > img {{
+  border-radius: 14px !important;
+}}
+
+/* ── Sidebar premium brand ───────────────────────────────────────────────── */
+.sb-brand {{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(99,102,241,0.14);
+}}
+.sb-brand-dot {{
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  box-shadow: 0 3px 12px rgba(79,70,229,0.45);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.15rem; flex-shrink: 0;
+}}
+.sb-brand-name {{
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #e0e7ff;
+  line-height: 1.1;
+}}
+.sb-brand-tag {{
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #6366f1;
+}}
+.sb-section {{
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(99,102,241,0.7);
+  margin: 14px 0 6px;
+}}
+
+/* ── Main block padding ──────────────────────────────────────────────────── */
+.block-container {{
+  padding-top: 1.5rem !important;
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+}}
+@media (max-width: 768px) {{
+  .block-container {{ padding-left: 1rem !important; padding-right: 1rem !important; }}
+}}
+
+/* ── Tab premium ─────────────────────────────────────────────────────────── */
+.stTabs [data-baseweb="tab-list"] {{
+  gap: 3px !important;
+}}
+.stTabs [data-baseweb="tab"] {{
+  border-radius: 8px !important;
+  transition: background 0.15s ease, color 0.15s ease !important;
+}}
+.stTabs [aria-selected="true"] {{
+  background: linear-gradient(135deg, #4f46e5, #6d28d9) !important;
+  box-shadow: 0 2px 10px rgba(79,70,229,0.4) !important;
+}}
+
+/* ── Input area premium ──────────────────────────────────────────────────── */
+.stTextInput > div > div,
+.stTextArea > div > div {{
+  border-radius: 10px !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}}
+.stTextInput > div > div:focus-within,
+.stTextArea > div > div:focus-within {{
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.13), 0 2px 8px rgba(0,0,0,0.18) !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -943,7 +1070,16 @@ def _cached_body_parts(grade: str, lang: str) -> bytes:
 # SIDEBAR
 # ══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
-    st.markdown(f'<h2 style="color:{_TITLE_C};font-size:1.15rem;font-weight:800;margin-bottom:12px;">{T["settings"]}</h2>', unsafe_allow_html=True)
+    st.markdown(f"""
+<div class="sb-brand">
+  <div class="sb-brand-dot">🎓</div>
+  <div>
+    <div class="sb-brand-name">ShikshAI</div>
+    <div class="sb-brand-tag">{"आवाज़-सक्षम" if _lang=="hi" else "AI Teaching"}</div>
+  </div>
+</div>
+<div class="sb-section">{T["settings"]}</div>
+""", unsafe_allow_html=True)
 
     api_key = os.getenv("OPENAI_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")
 
@@ -1189,33 +1325,19 @@ def _info(msg: str):
 
 
 def _copy_btn(text: str, label: str = "📋 Copy", height: int = 44):
-    import streamlit.components.v1 as components
-    safe = text.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
-    components.html(f"""
-<button onclick="
+    uid  = abs(hash(text[:40])) % 999999
+    safe = text.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$").replace('"', '\\"')
+    st.markdown(f"""
+<button id="cpbtn{uid}" onclick="
   navigator.clipboard.writeText(`{safe}`).then(()=>{{
-    this.textContent='✅ Copied!';
-    this.style.borderColor='#10b981';
-    this.style.color='#34d399';
-    setTimeout(()=>{{
-      this.textContent='{label}';
-      this.style.borderColor='';
-      this.style.color='';
-    }},1600);
+    var b=document.getElementById('cpbtn{uid}');
+    b.innerHTML='✅ Copied!';b.style.borderColor='#10b981';b.style.color='#34d399';
+    setTimeout(()=>{{b.innerHTML='{label}';b.style.borderColor='';b.style.color='';}},1600);
   }}).catch(()=>{{
-    this.textContent='⚠️ Failed'; setTimeout(()=>this.textContent='{label}',1600);
-  }})
-" class="action-pill">{label}</button>
-<style>
-  .action-pill{{display:inline-flex;align-items:center;gap:6px;
-    background:#1e1e3a;color:#e2e8f0;
-    border:1px solid rgba(255,255,255,0.18);border-radius:50px;
-    padding:8px 18px;font-size:0.82rem;font-weight:600;
-    cursor:pointer;transition:all 0.18s;font-family:Inter,sans-serif;
-    white-space:nowrap;}}
-  .action-pill:hover{{background:#2d2d50;border-color:rgba(255,255,255,0.3);}}
-</style>
-""", height=height)
+    var b=document.getElementById('cpbtn{uid}');
+    b.innerHTML='⚠️ Failed';setTimeout(()=>b.innerHTML='{label}',1600);
+  }})" class="action-pill">{label}</button>
+""", unsafe_allow_html=True)
 
 
 def _empty_state(icon: str, title: str, sub: str):
@@ -1225,6 +1347,18 @@ def _empty_state(icon: str, title: str, sub: str):
   <div style="font-size:1.05rem;font-weight:600;margin-bottom:6px;">{title}</div>
   <div style="font-size:0.88rem;">{sub}</div>
 </div>""", unsafe_allow_html=True)
+
+
+def _out_sec(icon: str, title: str, badge: str = "", color: str = "#6366f1"):
+    b = (f'<span class="out-label-badge" style="color:{color};'
+         f'border-color:{color}33;background:{color}14;">{badge}</span>') if badge else ""
+    st.markdown(
+        f'<div class="out-label" style="border-left-color:{color};'
+        f'background:linear-gradient(90deg,{color}0f 0%,transparent 90%);">'
+        f'<span class="out-label-ic">{icon}</span>'
+        f'<span class="out-label-tx" style="color:{color}cc;">{title}</span>'
+        f'{b}</div>',
+        unsafe_allow_html=True)
 
 
 def _chip_buttons(items: list, key_prefix: str, state_key: str, auto_action: str = None):
@@ -1340,24 +1474,24 @@ with tab1:
         if _do_stream or (data and ("explanation" in data or "title" in data)):
 
             # 1. CONCEPT DIAGRAM (top)
-            st.markdown(T["t1_diagram"])
+            _out_sec("📊", "Concept Diagram" if _lang == "en" else "अवधारणा डायग्राम", "AI", "#6366f1")
             diag_img = st.session_state.get("_diagram_img")
             if diag_img:
                 show_board_image(diag_img)
 
             # 2. SMART BOARD VISUAL
             if data and ("explanation" in data or "title" in data):
-                st.markdown(T["t1_board"])
+                _out_sec("📋", "Smart Board Visual" if _lang == "en" else "स्मार्ट बोर्ड विज़ुअल", "Visual", "#10b981")
                 show_board_image(_cached_concept_card(_json.dumps(data, ensure_ascii=False, sort_keys=True)))
 
-                st.markdown(T["t1_voice"])
+                _out_sec("🔊", "Teacher Voice" if _lang == "en" else "शिक्षक आवाज़", "TTS", "#f59e0b")
                 speak_text = data.get("speak_text", data.get("explanation", ""))
                 play_tts(speak_text, lang=tts_lang)
 
             # 3. FULL EXPLANATION (streaming gpt-4o, bottom)
             _cur_concept = st.session_state.get("_t1_stream_concept", "")
             if _cur_concept:
-                st.markdown(T["t1_expander"].replace("📖 ", "#### 📖 "))
+                _out_sec("📖", "Full Explanation" if _lang == "en" else "पूर्ण व्याख्या", "", "#8b5cf6")
                 if _do_stream:
                     from utils.ai_helper import stream_chat_answer
                     _q = (f"Explain '{_cur_concept}' to Grade {grade} {subject} students."
@@ -1508,10 +1642,10 @@ with tab2:
             q    = qs[idx]
             from utils.visuals import create_quiz_card
 
-            st.markdown(T["t2_board"])
+            _out_sec("📋", "Smart Board View" if _lang == "en" else "स्मार्ट बोर्ड", "Quiz", "#10b981")
             show_board_image(_cached_quiz_card(_json.dumps(q, ensure_ascii=False, sort_keys=True), idx + 1, len(qs)))
 
-            st.markdown(T["t2_choose"])
+            _out_sec("💡", "Choose Your Answer" if _lang == "en" else "उत्तर चुनें", "", "#6366f1")
             answered = st.session_state.quiz_answered
             correct  = q.get("answer","A")
             opts     = q.get("options", {})
@@ -1598,10 +1732,10 @@ with tab3:
     with col_t2:
         result = st.session_state.get("trans_result", {})
         if result and "translation" in result:
-            st.markdown(T["t3_board"])
+            _out_sec("📋", "Smart Board View" if _lang == "en" else "स्मार्ट बोर्ड", "Visual", "#10b981")
             show_board_image(_cached_translation_card(_json.dumps(result, ensure_ascii=False, sort_keys=True)))
 
-            st.markdown(T["t3_trans_label"])
+            _out_sec("🌐", "Translation" if _lang == "en" else "अनुवाद", "", "#06b6d4")
             st.markdown(
                 f'<div class="display-box" style="font-size:1.15rem;">'
                 f'{result.get("translation","")}</div>',
@@ -1667,7 +1801,7 @@ with tab4:
                         play_tts(intro, lang=tts_lang)
 
         st.markdown("---")
-        st.markdown(T["t4_timer_title"])
+        _out_sec("⏱️", "Classroom Countdown Timer" if _lang == "en" else "कक्षा काउंटडाउन टाइमर", "", "#f59e0b")
         timer_mins = st.number_input(T["t4_timer_dur"], 1, 60, int(duration),
                                      key="timer_mins")
 
@@ -1718,7 +1852,7 @@ var iv=setInterval(function(){{
     with col_a2:
         act = st.session_state.get("activity_data")
         if act:
-            st.markdown(T["t4_board"])
+            _out_sec("📋", "Smart Board Visual" if _lang == "en" else "स्मार्ट बोर्ड विज़ुअल", "Visual", "#10b981")
             show_board_image(_cached_activity_card(_json.dumps(act, ensure_ascii=False, sort_keys=True)))
 
             title = act.get("title","Activity")

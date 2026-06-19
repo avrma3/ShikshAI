@@ -159,6 +159,29 @@ def _mixed_line_width(text: str, size: int) -> int:
     return total
 
 
+def _wrap_pixels(text: str, size: int, max_px: int) -> list:
+    """Word-wrap text so every line fits within max_px at the given font size.
+    Measurement uses _sci_ascii so it matches what _draw_sci actually renders."""
+    is_deva = _has_devanagari(text)
+    font    = _load_font_deva(size) if is_deva else _load_font(size)
+    words, lines, current = text.split(), [], ""
+    for word in words:
+        candidate = (current + " " + word).strip()
+        if is_deva:
+            w = _mixed_line_width(candidate, size)
+        else:
+            w = _text_width(font, _sci_ascii(candidate))
+        if w <= max_px:
+            current = candidate
+        else:
+            if current:
+                lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    return lines
+
+
 def _draw_mixed_line(draw, x: int, y: int, text: str, fill, size: int):
     """Left-aligned per-segment renderer for mixed Devanagari+Latin text.
 
@@ -279,7 +302,7 @@ def create_concept_card(data: dict) -> bytes:
         data.get("title", "") + data.get("explanation", "")
     )
     wrap_expl  = 48 if is_hindi else 44
-    wrap_panel = 22 if is_hindi else 26
+    wrap_panel = 18 if is_hindi else 22
     wrap_kp    = 46 if is_hindi else 54
 
     formula = data.get("formula") or data.get("key_equation") or ""
@@ -294,10 +317,15 @@ def create_concept_card(data: dict) -> bytes:
     FML_BOT = HDR_H + 118   # 114px tall formula box
 
     expl_y     = FML_BOT + 14 if formula else HDR_H + 10
-    expl_lines = textwrap.wrap(data.get("explanation", ""), width=wrap_expl)[:5]
-    expl_h     = 62 + max(len(expl_lines), 2) * 64 + 14
+    expl_lines = _wrap_pixels(data.get("explanation", ""), 48, 900)[:4]
+    expl_h     = 62 + max(len(expl_lines), 2) * 70 + 14
     mid_y      = expl_y + expl_h + 16
-    PANEL_H    = 252
+
+    ex_lines = _wrap_pixels(data.get("example", ""), 38, 460)[:6]
+    ff_lines = _wrap_pixels(data.get("fun_fact", ""), 38, 460)[:6]
+    n_panel  = max(len(ex_lines), len(ff_lines), 2)
+    PANEL_H  = 50 + n_panel * 52 + 24
+
     kp_y       = mid_y + PANEL_H + 16
     kpts       = data.get("key_points", [])[:3]
     kp_h       = 62 + max(len(kpts), 1) * 68 + 12
@@ -320,22 +348,35 @@ def create_concept_card(data: dict) -> bytes:
     _rr(draw, [14, 14, 154, 46], 8, INDIGO, None)
     _draw_sci(draw, (84, 30), "ShikshAI", WHITE, f_badge, anchor="mm")
 
-    title_text  = data.get("title", "Concept")
-    title_wrap  = 36
-    title_lines = textwrap.wrap(title_text, width=title_wrap)[:2]
-    if len(title_lines) == 1:
-        _draw_content(draw, (W // 2, HDR_H // 2), title_lines[0], WHITE, 74, anchor="mm")
+    title_text = data.get("title", "Concept")
+    t_lines = _wrap_pixels(title_text, 52, 800)[:2]
+    _ft1, _ft2 = _load_font(52), _load_font(42)
+    if len(t_lines) == 1:
+        tw = _text_width(_ft1, _sci_ascii(t_lines[0]))
+        tx = max(20, (W - tw) // 2)
+        _draw_content(draw, (tx, HDR_H // 2 - 26), t_lines[0], WHITE, 52)
     else:
-        _draw_content(draw, (W // 2, 38), title_lines[0], WHITE, 58, anchor="mm")
-        _draw_content(draw, (W // 2, 98), title_lines[1], (215, 220, 255), 50, anchor="mm")
+        tw1 = _text_width(_ft1, _sci_ascii(t_lines[0]))
+        tw2 = _text_width(_ft2, _sci_ascii(t_lines[1]))
+        _draw_content(draw, (max(20, (W - tw1) // 2), 22), t_lines[0], WHITE, 52)
+        _draw_content(draw, (max(20, (W - tw2) // 2), 82), t_lines[1], (215, 220, 255), 42)
 
     # ── FORMULA BOX ──────────────────────────────────────────────────────────
     if formula:
         _rr(draw, [32, FML_TOP, W-32, FML_BOT], 14, (24, 20, 6), AMBER, w=2)
         _rr(draw, [50, FML_TOP, 174, FML_TOP+24], 8, AMBER, None)
         _draw_sci(draw, (112, FML_TOP+12), "FORMULA", BG, f_badge, anchor="mm")
-        _draw_sci(draw, (W//2, (FML_TOP+FML_BOT)//2), str(formula)[:85],
-                  AMBER, _load_font(52), anchor="mm")
+        _fml_str  = _sci_ascii(str(formula)[:85])
+        _fml_avail = W - 32 - 190   # usable: after badge (x=190) to panel right (x=W-32)
+        _fml_sz   = 52
+        while _fml_sz >= 22:
+            if _text_width(_load_font(_fml_sz), _fml_str) <= _fml_avail:
+                break
+            _fml_sz -= 2
+        _fml_w = _text_width(_load_font(_fml_sz), _fml_str)
+        _fml_x = 190 + max(0, (_fml_avail - _fml_w) // 2)
+        _fml_y = (FML_TOP + FML_BOT) // 2 - _fml_sz // 2
+        _draw_sci(draw, (_fml_x, _fml_y), _fml_str, AMBER, _load_font(_fml_sz))
 
     # ── EXPLANATION ──────────────────────────────────────────────────────────
     _rr(draw, [32, expl_y, W-32, expl_y+expl_h], 14, (14, 18, 55), INDIGO, w=1)
@@ -343,22 +384,22 @@ def create_concept_card(data: dict) -> bytes:
     _draw_sci(draw, (52, expl_y+17), "EXPLANATION", (120, 125, 255), f_lbl)
     draw.line([(52, expl_y+40), (268, expl_y+40)], fill=(70, 75, 200), width=1)
     for i, line in enumerate(expl_lines):
-        _draw_content(draw, (52, expl_y+52+i*64), line, TEXT_PRIMARY, 50)
+        _draw_content(draw, (52, expl_y+52+i*70), line, TEXT_PRIMARY, 48)
 
     # ── EXAMPLE + FUN FACT (two-column) ──────────────────────────────────────
     _rr(draw, [32, mid_y, 576, mid_y+PANEL_H], 14, (10, 20, 50), EMERALD, w=2)
     draw.rectangle([32, mid_y+16, 36, mid_y+PANEL_H-16], fill=EMERALD)
     _draw_sci(draw, (52, mid_y+17), "EXAMPLE", EMERALD, f_lbl)
     draw.line([(52, mid_y+40), (258, mid_y+40)], fill=EMERALD, width=1)
-    for i, line in enumerate(textwrap.wrap(data.get("example", ""), width=wrap_panel)[:4]):
-        _draw_content(draw, (52, mid_y+50+i*52), line, TEXT_PRIMARY, 40)
+    for i, line in enumerate(ex_lines):
+        _draw_content(draw, (52, mid_y+50+i*52), line, TEXT_PRIMARY, 38)
 
     _rr(draw, [624, mid_y, W-32, mid_y+PANEL_H], 14, (22, 16, 50), AMBER, w=2)
     draw.rectangle([624, mid_y+16, 628, mid_y+PANEL_H-16], fill=AMBER)
     _draw_sci(draw, (644, mid_y+17), "FUN FACT", AMBER, f_lbl)
     draw.line([(644, mid_y+40), (848, mid_y+40)], fill=AMBER, width=1)
-    for i, line in enumerate(textwrap.wrap(data.get("fun_fact", ""), width=wrap_panel)[:4]):
-        _draw_content(draw, (644, mid_y+50+i*52), line, TEXT_PRIMARY, 40)
+    for i, line in enumerate(ff_lines):
+        _draw_content(draw, (644, mid_y+50+i*52), line, TEXT_PRIMARY, 38)
 
     # ── KEY POINTS ────────────────────────────────────────────────────────────
     _rr(draw, [32, kp_y, W-32, kp_y+kp_h], 14, (14, 16, 54), PURPLE, w=1)
@@ -371,14 +412,27 @@ def create_concept_card(data: dict) -> bytes:
         col = dot_colors[i % 3]
         draw.ellipse([52, cy, 90, cy+38], fill=col)
         _draw_sci(draw, (71, cy+19), str(i+1), WHITE, f_lbl_sm, anchor="mm")
-        pt_lines = textwrap.wrap(str(pt), width=wrap_kp)
+        pt_lines = _wrap_pixels(str(pt), 40, 1040)
         _draw_content(draw, (104, cy+2), pt_lines[0] if pt_lines else str(pt), TEXT_PRIMARY, 40)
 
-    # ── HINDI SUMMARY STRIP ───────────────────────────────────────────────────
+    # ── SUMMARY STRIP ────────────────────────────────────────────────────────
     draw.rectangle([0, H-82, W, H], fill=(14, 20, 62))
     draw.line([(0, H-82), (W, H-82)], fill=INDIGO, width=2)
-    hindi = str(data.get("hindi_summary", ""))[:100]
-    _draw_content(draw, (W//2, H-38), hindi, AMBER, 36, anchor="mm")
+    _strip_text = str(data.get("hindi_summary", ""))[:120]
+    if not is_hindi and _has_devanagari(_strip_text):
+        # English mode but API returned Hindi — use speak_text first sentence
+        _st = str(data.get("speak_text", ""))
+        _strip_text = (_st.split(".")[0] + ".").strip()[:120]
+    _h_sz = 34
+    while _h_sz >= 18:
+        _h_w = _mixed_line_width(_strip_text, _h_sz) if _has_devanagari(_strip_text) else _text_width(_load_font(_h_sz), _sci_ascii(_strip_text))
+        if _h_w <= 1100:
+            break
+        _h_sz -= 2
+    _h_w = _mixed_line_width(_strip_text, _h_sz) if _has_devanagari(_strip_text) else _text_width(_load_font(_h_sz), _sci_ascii(_strip_text))
+    _h_x = max(20, (W - _h_w) // 2)
+    _h_y = H - 38 - _h_sz // 2
+    _draw_content(draw, (_h_x, _h_y), _strip_text, AMBER, _h_sz)
 
     img = _shrink(img)
     buf = io.BytesIO()
@@ -858,19 +912,19 @@ def _diagram_photosynthesis(data: dict, lang: str = "en") -> bytes:
         (60,  220, "Water (H2O)", TEAL,    "From roots"),
         (60,  340, "CO2",         INDIGO,  "From air"),
         (380, 220, "Chlorophyll", EMERALD, "Green pigment"),
-        (680, 130, "Glucose",     AMBER,   "Food / energy"),
-        (680, 310, "Oxygen O2",   TEAL,    "Released out"),
+        (630, 130, "Glucose",     AMBER,   "Food / energy"),
+        (630, 310, "Oxygen O2",   TEAL,    "Released out"),
     ]
     for x, y, lbl, col, sub in boxes:
-        _rr(draw, [x, y, x+240, y+68], 10, (16, 24, 55), col)
-        _draw_lbl(draw, (x+120, y+22), lbl, col,           20, lang, anchor="mm")
-        _draw_lbl(draw, (x+120, y+50), sub, TEXT_SECONDARY, 16, lang, anchor="mm")
+        _rr(draw, [x, y, x+220, y+68], 10, (16, 24, 55), col)
+        _draw_lbl(draw, (x+110, y+22), lbl, col,           20, lang, anchor="mm")
+        _draw_lbl(draw, (x+110, y+50), sub, TEXT_SECONDARY, 16, lang, anchor="mm")
 
     # Arrows: inputs -> chlorophyll -> outputs
     for sx, sy in [(180,168),(180,288),(180,408)]:
         draw.line([(sx, sy), (380, 254)], fill=WHITE, width=1)
-    draw.line([(620, 254), (680, 164)], fill=AMBER, width=2)
-    draw.line([(620, 254), (680, 344)], fill=TEAL,  width=2)
+    draw.line([(620, 254), (630, 164)], fill=AMBER, width=2)
+    draw.line([(620, 254), (630, 344)], fill=TEAL,  width=2)
 
     _draw_lbl(draw, (W//2, H-16), "photo_eq", AMBER, 16, lang, anchor="mm")
 
