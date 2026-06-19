@@ -945,7 +945,7 @@ def _diagram_water_cycle(data: dict, lang: str = "en") -> bytes:
         (120, 200, "Evaporation",  AMBER),
         (380, 100, "Condensation", INDIGO),
         (640, 100, "Clouds",       PURPLE),
-        (750, 300, "Precipitation",TEAL),
+        (720, 300, "Precipitation",TEAL),
     ]
     for x, y, lbl, col in stages:
         _rr(draw, [x-10, y-20, x+160, y+40], 10, (14, 20, 55), col)
