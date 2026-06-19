@@ -518,6 +518,30 @@ button[kind="primary"]:hover,
   background: rgba(99,102,241,0.08);
   border-color: rgba(99,102,241,0.35);
 }}
+/* Matches Streamlit primary pill button height — used alongside 🔊 Speak */
+.copy-btn-primary {{
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  border-radius: 50px;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: transparent;
+  color: #818cf8;
+  border: 1.5px solid rgba(99,102,241,0.45);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 4px rgba(99,102,241,0.15);
+  text-align: center;
+  box-sizing: border-box;
+}}
+.copy-btn-primary:hover {{
+  background: rgba(99,102,241,0.1);
+  border-color: rgba(99,102,241,0.7);
+  box-shadow: 0 2px 10px rgba(99,102,241,0.25);
+}}
 
 /* ── Typing indicator ────────────────────────────────────────────────────── */
 .typing-dot {{
@@ -1417,47 +1441,28 @@ def _info(msg: str):
 
 
 def _copy_btn(text: str, label: str = "📋 Copy", height: int = 44, match_primary: bool = False):
-    uid  = abs(hash(text[:40])) % 999999
-    safe = text.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$").replace('"', '\\"')
-    if match_primary:
-        btn_style = (
-            "width:100%;min-height:42px;border-radius:50px;"
-            "padding:8px 16px;font-size:0.875rem;font-weight:600;"
-            "background:transparent;color:#818cf8;"
-            "border:1.5px solid rgba(99,102,241,0.45);"
-            "cursor:pointer;display:inline-flex;align-items:center;"
-            "justify-content:center;gap:6px;font-family:inherit;"
-            "transition:all 0.15s ease;box-sizing:border-box;"
-            "box-shadow:0 1px 4px rgba(99,102,241,0.15);"
-        )
-        hover_in  = "this.style.background='rgba(99,102,241,0.1)';this.style.borderColor='rgba(99,102,241,0.7)';"
-        hover_out = "this.style.background='transparent';this.style.borderColor='rgba(99,102,241,0.45)';"
-        cls       = ""
-        wrap_open = '<div style="width:100%;display:block;">'
-        wrap_close= "</div>"
-    else:
-        btn_style = ""
-        hover_in  = ""
-        hover_out = ""
-        cls       = "action-pill"
-        wrap_open = ""
-        wrap_close= ""
-    st.markdown(f"""
-{wrap_open}<button id="cpbtn{uid}"
-  style="{btn_style}"
-  class="{cls}"
-  onmouseover="{hover_in}"
-  onmouseout="{hover_out}"
-  onclick="
-  navigator.clipboard.writeText(`{safe}`).then(()=>{{
-    var b=document.getElementById('cpbtn{uid}');
-    b.innerHTML='✅ Copied!';b.style.borderColor='#10b981';b.style.color='#34d399';
-    setTimeout(()=>{{b.innerHTML='{label}';b.style.borderColor='';b.style.color='';}},1600);
-  }}).catch(()=>{{
-    var b=document.getElementById('cpbtn{uid}');
-    b.innerHTML='⚠️ Failed';setTimeout(()=>b.innerHTML='{label}',1600);
-  }})">{label}</button>{wrap_close}
-""", unsafe_allow_html=True)
+    import base64 as _b64
+    uid = abs(hash(text[:40])) % 999999
+    # Base64-encode the full text so no Markdown chars (##, **, etc.) leak into
+    # the onclick attribute and get parsed by Streamlit's Markdown renderer.
+    b64 = _b64.b64encode(text.encode("utf-8")).decode("ascii")
+    cls = "copy-btn-primary" if match_primary else "action-pill"
+    js  = (
+        f"(function(){{"
+        f"var bytes=Uint8Array.from(atob('{b64}'),function(c){{return c.charCodeAt(0)}});"
+        f"var text=new TextDecoder().decode(bytes);"
+        f"var btn=document.getElementById('cpbtn{uid}');"
+        f"navigator.clipboard.writeText(text)"
+        f".then(function(){{btn.textContent='✅ Copied!';btn.style.color='#34d399';"
+        f"setTimeout(function(){{btn.textContent='{label}';btn.style.color='';}},1600);}})"
+        f".catch(function(){{btn.textContent='⚠️ Failed';"
+        f"setTimeout(function(){{btn.textContent='{label}';}},1600);}});"
+        f"}})()"
+    )
+    st.markdown(
+        f'<button id="cpbtn{uid}" class="{cls}" onclick="{js}">{label}</button>',
+        unsafe_allow_html=True,
+    )
 
 
 def _empty_state(icon: str, title: str, sub: str):
