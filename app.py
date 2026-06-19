@@ -1416,11 +1416,39 @@ def _info(msg: str):
     st.markdown(f'<div class="info-card">ℹ️ {msg}</div>', unsafe_allow_html=True)
 
 
-def _copy_btn(text: str, label: str = "📋 Copy", height: int = 44):
+def _copy_btn(text: str, label: str = "📋 Copy", height: int = 44, match_primary: bool = False):
     uid  = abs(hash(text[:40])) % 999999
     safe = text.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$").replace('"', '\\"')
+    if match_primary:
+        btn_style = (
+            "width:100%;min-height:42px;border-radius:50px;"
+            "padding:8px 16px;font-size:0.875rem;font-weight:600;"
+            "background:transparent;color:#818cf8;"
+            "border:1.5px solid rgba(99,102,241,0.45);"
+            "cursor:pointer;display:inline-flex;align-items:center;"
+            "justify-content:center;gap:6px;font-family:inherit;"
+            "transition:all 0.15s ease;box-sizing:border-box;"
+            "box-shadow:0 1px 4px rgba(99,102,241,0.15);"
+        )
+        hover_in  = "this.style.background='rgba(99,102,241,0.1)';this.style.borderColor='rgba(99,102,241,0.7)';"
+        hover_out = "this.style.background='transparent';this.style.borderColor='rgba(99,102,241,0.45)';"
+        cls       = ""
+        wrap_open = '<div style="width:100%;display:block;">'
+        wrap_close= "</div>"
+    else:
+        btn_style = ""
+        hover_in  = ""
+        hover_out = ""
+        cls       = "action-pill"
+        wrap_open = ""
+        wrap_close= ""
     st.markdown(f"""
-<button id="cpbtn{uid}" onclick="
+{wrap_open}<button id="cpbtn{uid}"
+  style="{btn_style}"
+  class="{cls}"
+  onmouseover="{hover_in}"
+  onmouseout="{hover_out}"
+  onclick="
   navigator.clipboard.writeText(`{safe}`).then(()=>{{
     var b=document.getElementById('cpbtn{uid}');
     b.innerHTML='✅ Copied!';b.style.borderColor='#10b981';b.style.color='#34d399';
@@ -1428,7 +1456,7 @@ def _copy_btn(text: str, label: str = "📋 Copy", height: int = 44):
   }}).catch(()=>{{
     var b=document.getElementById('cpbtn{uid}');
     b.innerHTML='⚠️ Failed';setTimeout(()=>b.innerHTML='{label}',1600);
-  }})" class="action-pill">{label}</button>
+  }})">{label}</button>{wrap_close}
 """, unsafe_allow_html=True)
 
 
@@ -1604,7 +1632,7 @@ with tab1:
                 if _ans_text and _ans_text != "__streaming__":
                     _cb1, _cb2, _ = st.columns([1, 1, 3])
                     with _cb1:
-                        _copy_btn(_ans_text, "📋 Copy")
+                        _copy_btn(_ans_text, "📋 Copy", match_primary=True)
                     with _cb2:
                         if st.button("🔊 Speak", key="t1_speak_ans", type="primary"):
                             play_tts(_ans_text[:600], lang=tts_lang)
