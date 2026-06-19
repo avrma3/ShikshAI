@@ -629,7 +629,17 @@ hr {{
 }}
 
 /* ── Hide Streamlit chrome ───────────────────────────────────────────────── */
-#MainMenu, header {{ visibility: hidden; }}
+#MainMenu {{ visibility: hidden; }}
+header {{ visibility: hidden; }}
+/* Sidebar toggle button must stay visible even when header is hidden */
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapsedControl"],
+button[data-testid="baseButton-headerNoPadding"],
+[data-testid="stSidebarCollapseButton"] {{
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: all !important;
+}}
 footer {{ display: none !important; }}
 [data-testid="stToolbar"]        {{ display: none !important; }}
 [data-testid="stDeployButton"]   {{ display: none !important; }}
