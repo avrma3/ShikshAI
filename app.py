@@ -610,6 +610,38 @@ section[data-testid="stSidebar"] {{
 section[data-testid="stSidebar"] > div:first-child {{
   background: {_SIDEBAR} !important;
 }}
+/* Collapsed-control: the ▶ tab that reopens sidebar — MUST stay visible */
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"] {{
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 99999 !important;
+  background: rgba(99,102,241,0.12) !important;
+  border-radius: 0 10px 10px 0 !important;
+  border-right: 2px solid rgba(99,102,241,0.35) !important;
+  box-shadow: 2px 0 12px rgba(79,70,229,0.2) !important;
+}}
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="collapsedControl"] button {{
+  color: #818cf8 !important;
+  background: transparent !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}}
+[data-testid="stSidebarCollapsedControl"] svg,
+[data-testid="collapsedControl"] svg {{
+  fill: #818cf8 !important;
+  stroke: #818cf8 !important;
+  opacity: 1 !important;
+}}
+/* Collapse button inside sidebar */
+[data-testid="stSidebarCollapseButton"] button {{
+  color: {_TEXT2} !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}}
 
 /* ── Progress bar ────────────────────────────────────────────────────────── */
 .stProgress > div > div > div > div {{
@@ -633,14 +665,30 @@ hr {{
   margin: 16px 0;
 }}
 
-/* ── Streamlit chrome — header blends with app, sidebar toggle native ───── */
-/* Header matches app background — seamless look, toggle works natively */
+/* ── Streamlit chrome — header blends with app, sidebar toggle stays native ─ */
 header[data-testid="stHeader"] {{
   background: {_BG} !important;
   border-bottom: none !important;
 }}
+/* Toolbar: keep fully in DOM — sidebar toggle button lives here in 1.35+.
+   Just make it transparent so it blends with the app background. */
+[data-testid="stToolbar"] {{
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}}
+/* All buttons inside toolbar get purple color so they're visible on dark bg */
+[data-testid="stToolbar"] button {{
+  color: #818cf8 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}}
+[data-testid="stToolbar"] svg {{
+  fill: #818cf8 !important;
+  opacity: 1 !important;
+}}
+/* Hide ONLY specific known unwanted buttons by exact testid — never hide all */
 #MainMenu                        {{ visibility: hidden; }}
-[data-testid="stToolbar"]        {{ display: none !important; }}
 [data-testid="stStatusWidget"]   {{ display: none !important; }}
 [data-testid="stDeployButton"]   {{ display: none !important; }}
 [data-testid="stBottom"]         {{ display: none !important; }}
@@ -1199,6 +1247,36 @@ border-radius:12px;padding:14px 16px;">
             st.session_state[k] = v
         st.toast(T.get("reset_toast", "Session reset! 🔄"), icon="✅")
         st.rerun()
+
+
+# ── Sidebar auto-expand JS (runs once; expands if browser-state is collapsed) ─
+st.html("""
+<script>
+(function(){
+  var _expanded = false;
+  function tryExpand(){
+    if(_expanded) return;
+    var sidebar = document.querySelector('[data-testid="stSidebar"]');
+    if(!sidebar) return;
+    var w = sidebar.getBoundingClientRect().width;
+    if(w < 50){
+      var btn = document.querySelector(
+        '[data-testid="stSidebarCollapsedControl"] button, ' +
+        '[data-testid="collapsedControl"] button'
+      );
+      if(btn){ btn.click(); _expanded = true; }
+    } else {
+      _expanded = true;
+    }
+  }
+  var attempts = 0;
+  var t = setInterval(function(){
+    tryExpand();
+    if(_expanded || ++attempts > 20) clearInterval(t);
+  }, 200);
+})();
+</script>
+""")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
