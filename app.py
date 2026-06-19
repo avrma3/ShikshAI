@@ -601,10 +601,25 @@ section.main, .main, .stMain {{
   z-index: 9999;
 }}
 
-/* ── Sidebar ─────────────────────────────────────────────────────────────── */
-.stSidebar {{ background: {_SIDEBAR} !important; border-right: 1px solid {_BORDER} !important; }}
-[data-testid="stSidebarContent"],
-section[data-testid="stSidebar"] > div:first-child {{ background: {_SIDEBAR} !important; }}
+/* ── Sidebar — force always visible, never collapse ─────────────────────── */
+section[data-testid="stSidebar"] {{
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: translateX(0) !important;
+  min-width: 244px !important;
+  width: 244px !important;
+  background: {_SIDEBAR} !important;
+  border-right: 1px solid {_BORDER} !important;
+}}
+section[data-testid="stSidebar"] > div,
+section[data-testid="stSidebar"] > div:first-child,
+[data-testid="stSidebarContent"] {{
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background: {_SIDEBAR} !important;
+}}
 
 /* ── Progress bar ────────────────────────────────────────────────────────── */
 .stProgress > div > div > div > div {{
