@@ -27,7 +27,7 @@ st.set_page_config(
     page_title="ShikshAI — Smart Teaching Assistant",
     page_icon=_get_favicon(),
     layout="wide",
-    initial_sidebar_state="auto",
+    initial_sidebar_state="expanded",
 )
 
 # ── Session state defaults ─────────────────────────────────────────────────────
@@ -630,12 +630,18 @@ hr {{
 
 /* ── Hide Streamlit chrome ───────────────────────────────────────────────── */
 #MainMenu {{ visibility: hidden; }}
-header {{ visibility: hidden; }}
-/* Sidebar toggle button must stay visible even when header is hidden */
+/* Hide header content but keep sidebar toggle visible */
+header [data-testid="stToolbar"],
+header [data-testid="stDecoration"],
+header [data-testid="stHeader"],
+header > div:not([data-testid="collapsedControl"]):not([data-testid="stSidebarCollapsedControl"]) {{
+  visibility: hidden;
+}}
+/* Always keep sidebar toggle buttons visible */
 [data-testid="collapsedControl"],
 [data-testid="stSidebarCollapsedControl"],
-button[data-testid="baseButton-headerNoPadding"],
-[data-testid="stSidebarCollapseButton"] {{
+[data-testid="collapsedControl"] *,
+[data-testid="stSidebarCollapsedControl"] * {{
   visibility: visible !important;
   opacity: 1 !important;
   pointer-events: all !important;
