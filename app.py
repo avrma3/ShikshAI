@@ -498,8 +498,7 @@ button[kind="primary"]:hover,
 }}
 
 /* ── Speak button same size as Copy action-pill ─────────────────────────── */
-.stMarkdown:has(.t1-speak-anchor) ~ [data-testid="stButton"] button,
-.stMarkdown:has(.t1-speak-anchor) ~ [data-testid="stButton"] button:hover {{
+[data-testid="stVerticalBlock"]:has(.t1-speak-anchor) [data-testid="stButton"] button {{
   padding: 4px 10px !important;
   font-size: 0.75rem !important;
   font-weight: 500 !important;
