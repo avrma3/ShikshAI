@@ -633,28 +633,12 @@ hr {{
   margin: 16px 0;
 }}
 
-/* ── Hide Streamlit chrome — keep sidebar toggle working ────────────────── */
-#MainMenu {{ visibility: hidden; }}
-header {{
-  background: transparent !important;
-  height: 2.875rem !important;
-}}
-/* Hide everything inside header EXCEPT sidebar toggle buttons */
-header > * {{ visibility: hidden; }}
-[data-testid="stSidebarCollapseButton"],
-[data-testid="stSidebarCollapseButton"] *,
-[data-testid="collapsedControl"],
-[data-testid="collapsedControl"] *,
-[data-testid="stSidebarCollapsedControl"],
-[data-testid="stSidebarCollapsedControl"] * {{
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: all !important;
-}}
-footer {{ display: none !important; }}
+/* ── Hide Streamlit chrome — sidebar toggle fully untouched ─────────────── */
+#MainMenu                        {{ display: none !important; }}
+header                           {{ background: transparent !important; }}
 [data-testid="stToolbar"]        {{ display: none !important; }}
-[data-testid="stDeployButton"]   {{ display: none !important; }}
 [data-testid="stStatusWidget"]   {{ display: none !important; }}
+[data-testid="stDeployButton"]   {{ display: none !important; }}
 [data-testid="stBottom"]         {{ display: none !important; }}
 [data-testid="manage-app-button"]{{ display: none !important; }}
 [data-testid="stAppDeployButton"]{{ display: none !important; }}
@@ -667,6 +651,7 @@ button[data-testid*="deploy"]    {{ display: none !important; }}
 button[data-testid*="manage"]    {{ display: none !important; }}
 [class*="deployButton"]          {{ display: none !important; }}
 [class*="manageApp"]             {{ display: none !important; }}
+footer                           {{ display: none !important; }}
 /* ── Chat message action buttons (Copy / thumbs) ────────────────────────── */
 [data-testid="stChatMessageActionBar"] {{
   background: rgba(99,102,241,0.06) !important;
