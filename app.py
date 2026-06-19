@@ -694,13 +694,19 @@ header[data-testid="stHeader"] {{
 [data-testid="stBottom"]         {{ display: none !important; }}
 [data-testid="manage-app-button"]{{ display: none !important; }}
 [data-testid="stAppDeployButton"]{{ display: none !important; }}
+[data-testid="stShareButton"]    {{ display: none !important; }}
+[data-testid="stToolbarActionButton"] {{ display: none !important; }}
+[data-testid="stMainMenuButton"] {{ display: none !important; }}
 .stAppDeployButton               {{ display: none !important; }}
 .viewerBadge_container__1QSob   {{ display: none !important; }}
 .styles_viewerBadge__1yB5_      {{ display: none !important; }}
 button[data-testid*="deploy"]    {{ display: none !important; }}
 button[data-testid*="manage"]    {{ display: none !important; }}
+button[data-testid*="share"]     {{ display: none !important; }}
+button[data-testid*="Share"]     {{ display: none !important; }}
 [class*="deployButton"]          {{ display: none !important; }}
 [class*="manageApp"]             {{ display: none !important; }}
+[class*="shareButton"]           {{ display: none !important; }}
 footer                           {{ display: none !important; }}
 /* ── Chat message action buttons (Copy / thumbs) ────────────────────────── */
 [data-testid="stChatMessageActionBar"] {{
